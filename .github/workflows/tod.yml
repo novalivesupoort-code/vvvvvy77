@@ -1,4 +1,4 @@
-name: Jaco Stream - High Performance
+name: Kick Stream - Fast Start
 
 on:
   workflow_dispatch:
@@ -10,19 +10,12 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      - name: Install FFmpeg
+      - name: Start Stream Immediately
         run: |
-          sudo apt-get update
-          sudo apt-get install -y ffmpeg
-
-      - name: Run Stream
-        run: |
-          ffmpeg -re -timeout 10000000 -i "http://virtualdbxv.com:8080/alwan6hd/tracks-v1a1/mono.m3u8" \
+          ffmpeg -re -timeout 10000000 -i "http://virtualdbxv.com:8080/alwan6hd/index.m3u8" \
           -i "logo.png" -filter_complex \
-          "[1:v]scale=iw*0.08:-1[logo]; \
-           [0:v]eq=brightness=0.03:contrast=1.03:saturation=1.12[video]; \
-           [video][logo]overlay=30:main_h-overlay_h-30" \
-          -vcodec libx264 -preset veryfast -tune zerolatency -g 50 \
-          -b:v 4000k -maxrate 4000k -bufsize 8000k \
+          "[1:v]scale=iw*0.08:-1[logo];[0:v]eq=brightness=0.03:contrast=1.03:saturation=1.12[video];[video][logo]overlay=30:H-h-30" \
+          -vcodec libx264 -preset veryfast -profile:v high -level 4.1 -pix_fmt yuv420p -g 50 \
+          -b:v 3500k -maxrate 3500k -bufsize 8000k \
           -acodec copy -map_metadata -1 \
-          -f flv "rtmp://101.46.62.149/jaco/3023705018_1773342664045?anchorUid=3023705018&biz=0&countryCode=FR&key=1804878664046-83a562f45a16b3cdf40b5df737fdf855&pbModeAttach=1&pbModeGap=3&presets=720P&pushFrom=obs&sid=794addd8a24a4214b6e1f4a94ebb736c&src=1&transcodeEnabled=true"
+          -f flv "rtmps://fa723fc1b171.global-contribute.live-video.net/app/sk_us-west-2_nkUmjoCL69RM_UVo973GLbMzeCMunGLzNKWbFQJ7Hfb"
