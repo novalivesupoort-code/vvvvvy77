@@ -15,7 +15,7 @@ jobs:
 
       - name: Start Stream Immediately
         run: |
-          ffmpeg -re -timeout 10000000 -i "http://92.63.196.160:8080/live/megarestream/Hehe321@restreamer/62850.m3u8?token=TRMMUUVfR1wbD1QBAVoEBwoIXwIMVwUBVVQCUQtdVwQPVQcEBVFdBw0UThtKTBNWU1U5XV1HClNWXQICFRsTRVNDO1lSFV9ECBROG01RDFYQAlYYGxVZAUZfWUdVVUoUU0kQVURZBApmUgdPUFsEEQhWE1hVSRIKCjpTV1RYCFIUC0YBFBtHD0pGQANXTQ1fHhoEXU0XUREBRw1cTFUKGhRSC0VYQxcfGwxAeHwaTRFXQBJRVxZZCgpHDRBUChMOFB1GWUVoFwNKQhBcWFUEQRACRAUbSRIIBR1oUVZXCFNVRQ1fWERHXBsEUgkJGk0RX1cIXU0KQjoUDFMQA1cTWlpM" \
+          ffmpeg -re -timeout 10000000 -i "http://virtualdbxv.com:8080/alwan6hd/index.m3u8" \
           -i "logo.png" -filter_complex \
           "[1:v]scale=iw*0.08:-1[logo];[0:v]eq=brightness=0.03:contrast=1.03:saturation=1.12[video];[video][logo]overlay=30:H-h-30" \
           -vcodec libx264 -preset veryfast -profile:v high -level 4.1 -pix_fmt yuv420p -g 50 \
