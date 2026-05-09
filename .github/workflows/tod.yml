@@ -21,5 +21,5 @@ jobs:
           -vcodec libx264 -preset veryfast -profile:v high -level 4.1 -pix_fmt yuv420p -g 50 \
           -b:v 3500k -maxrate 3500k -bufsize 8000k \
           -acodec copy -map_metadata -1 \
-          -f flv "rtmps://fa723fc1b171.global-contribute.live-video.net/app/sk_us-west-2_nkUmjoCL69RM_UVo973GLbMzeCMunGLzNKWbFQJ7Hfb"
+          -f flv "rtmps://fa723fc1b171.global-contribute.live-video.net/app/sk_us-west-2_LaBpq1zvOoGp_dNaI2aVsrGV4jhzjcuurJAwq7XjtHi"
 
