@@ -23,7 +23,7 @@ jobs:
           -i "logo.png" -filter_complex \
           "[1:v]scale=iw*0.07:-1[logo];[0:v]eq=brightness=0.03:contrast=1.03:saturation=1.12[video];[video][logo]overlay=30:H-h-30" \
           -vcodec libx264 -preset veryfast -profile:v high -level 4.1 -pix_fmt yuv420p -g 50 \
-          -b:v 5500k -maxrate 6000k -bufsize 12000k \
+          -b:v 4500k -maxrate 4500k -bufsize 9000k \
           -acodec copy -map_metadata -1 \
           -f flv "rtmps://fa723fc1b171.global-contribute.live-video.net/app/sk_us-west-2_LaBpq1zvOoGp_dNaI2aVsrGV4jhzjcuurJAwq7XjtHi"
 
