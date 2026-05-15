@@ -15,10 +15,21 @@ jobs:
 
       - name: Start Stream Immediately
         run: |
-          ffmpeg -re -timeout 10000000 -i "http://6861967.t03m.cc/live/0661090770/8725012301/1260602.m3u8?token=ShoJV0NcEgMVXQZaVgkPAwVUVFwFVAVTUAJTBAoGBFMAXAUOAVUEDwUaSUEXREVVBwg6DFUXC1UBAwBQCAdOR0RLBERvXVQbDRpTW1IBDgZRR0lHRVxcAREPAEoaRQsBEwJDBwEBBQkGAEdPRlVPRAMXCwRdalUBRVxTAxoPDBBdVE0UX1pvXVJVBA0AEg0SVkdJR1hGQUYJW0UKVBlAB1hME1dEURIDFQldUlQSGxIFChALRUdIRgkXcSMaGUAASUwEWENdX1cVAkcOV0UPEkpHDBZuR1QXR0dVB1VQEEcLGlEUHBZdWE9nBgwKXlJTEgwKC0IXC0YCFxxEVVoMDEVXE2lAXVQbDRpXV1ICAAVeRxg" \
-          -i "logo.png" -filter_complex \
-          "[1:v]scale=iw*0.07:-1[logo];[0:v]eq=brightness=0.03:contrast=1.03:saturation=1.12[video];[video][logo]overlay=30:H-h-30" \
-          -vcodec libx264 -preset veryfast -profile:v high -level 4.1 -pix_fmt yuv420p -g 50 \
-          -b:v 4500k -maxrate 4500k -bufsize 9000k \
-          -acodec copy -map_metadata -1 \
+          ffmpeg -re -timeout 10000000 \
+          -i "http://6861967.t03m.cc/live/0661090770/8725012301/1260602.m3u8?token=ShoJV0NcEgMVXQZaVgkPAwVUVFwFVAVTUAJTBAoGBFMAXAUOAVUEDwUaSUEXREVVBwg6DFUXC1UBAwBQCAdOR0RLBERvXVQbDRpTW1IBDgZRR0lHRVxcAREPAEoaRQsBEwJDBwEBBQkGAEdPRlVPRAMXCwRdalUBRVxTAxoPDBBdVE0UX1pvXVJVBA0AEg0SVkdJR1hGQUYJW0UKVBlAB1hME1dEURIDFQldUlQSGxIFChALRUdIRgkXcSMaGUAASUwEWENdX1cVAkcOV0UPEkpHDBZuR1QXR0dVB1VQEEcLGlEUHBZdWE9nBgwKXlJTEgwKC0IXC0YCFxxEVVoMDEVXE2lAXVQbDRpXV1ICAAVeRxg" \
+          -i "logo.png" \
+          -filter_complex "[1:v]scale=iw*0.07:-1[logo];[0:v]eq=brightness=0.03:contrast=1.03:saturation=1.12[video];[video][logo]overlay=30:H-h-30" \
+          -vcodec libx264 \
+          -preset veryfast \
+          -profile:v high \
+          -level 5.0 \
+          -pix_fmt yuv420p \
+          -g 50 \
+          -b:v 4500k \
+          -maxrate 4500k \
+          -bufsize 9000k \
+          -acodec aac \
+          -b:a 128k \
+          -ar 48000 \
+          -map_metadata -1 \
           -f flv "rtmps://fa723fc1b171.global-contribute.live-video.net/app/sk_us-west-2_LaBpq1zvOoGp_dNaI2aVsrGV4jhzjcuurJAwq7XjtHi"
