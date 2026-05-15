@@ -24,11 +24,11 @@ jobs:
             echo "Starting stream with Audio Copy..."
             ffmpeg -re -hide_banner -loglevel error \
             -reconnect 1 -reconnect_at_eof 1 -reconnect_streamed 1 -reconnect_delay_max 5 \
-            -i "http://45.67.136.25/3HfHLrEmIZ/caMjeGs0i3/342993?token=TEBZWURcEQ5AUFcABQ0BAgYBB1cKU1IGAFEMV1BXVQIDUQUBBFEKBAcTHRVGQBZSUwluX1cTXAYNUAxbUhoSQkQHQ2deUBEOWwMEBAEBSBVBAUNAVkM5XF1AD1ZZABwVQwtcXRUOAgNVCQUEDQZcBB5GVE5HVBRbWA5qBgRAWVRSQAsaFRgRWwxuVVJYVQpTEF4BGhFYFUUbWBdATRRTWEIMRUpOFgkWK2ATGxdRHENXCkJfXF9EDxsWRkBNFFlEaBBUS0NGVlUPVEMVDwRIFVMHRV9FVDlWVgxGQFsGHBVaA0lnVFtdWgdSRV5aWhcVCFUdFENYAhcDUwRRWAQHBhtAXFdZXUdbEG5BXlEWXgYDVwYPAAdKF1sLQRAAQlUVDVACCQcYEVYLRUNWQVE7QlwNRRQJEw1XSREXTkNUWUNFA0VdaFZDR0ALAwQEBFQHAkgTVFpFFFRNB2oAEUVvQlkLRRoNFlFEERMdFVddEEVTEFRpR0gWUBtYF0BNFEZoVA1VXVQWCRZAHRNAFw5UGxAMEwwDHURTSREXWFEaElZoAEFLFQ4DGEBAUltURxcVCEZdRxEdRFFcFFwBBGlbUk5ACxoEAgRWUQMHUgZWBlJXUQRXUQcCAV8BAAYDAlEHVFsIXBUYEUcLVRMNF1JWUlNVBwMCA1RUCFIFAVQFVlRUAQMODwEFAVACAAMNFkgVQQFCRVpeCBcDQFBQBA9SAwVbV1xSBAdQBgkIAwAFUgAAUgdQAlNXBQpTF05DX1FDFVgADwAMBwdaAwYAGRYJVG0JXlJWE1wXUgtWCT5ZXFNoA1dMUkZsUxBQUlIXGEZaUTtWRFJSA2pKB1ZAWwcASg" \
+            -i "http://virtualdbxv.com:8080/alwan1hd/index.m3u8" \
             -i "logo.png" \
             -filter_complex \
             "[1:v]scale=iw*0.07:-1[logo]; \
-             [0:v]eq=brightness=0.07:contrast=1.18:saturation=1.45:gamma=0.92[video]; \
+             [0:v]eq=brightness=0.06:contrast=1.18:saturation=1.45:gamma=0.92[video]; \
              [video][logo]overlay=30:H-h-30:format=auto,format=yuv420p" \
             -vcodec libx264 -preset ultrafast -profile:v high -level 4.2 -tune zerolatency -g 100 \
             -b:v 5000k -maxrate 5000k -bufsize 10000k \
@@ -38,3 +38,4 @@ jobs:
             echo "Stream interrupted. Reconnecting in 5 seconds..."
             sleep 5
           done
+
