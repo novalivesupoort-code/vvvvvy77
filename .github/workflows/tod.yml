@@ -1,4 +1,4 @@
-name: Kick Stream - Fast Start
+name: Kick Stream - High Quality & Audio Copy
 
 on:
   workflow_dispatch:
@@ -17,13 +17,24 @@ jobs:
       - name: Install FFmpeg
         run: sudo apt-get update && sudo apt-get install -y ffmpeg
 
-      - name: Start Stream Immediately
+      - name: Start Stream with Infinite Loop & Audio Copy
         run: |
-          ffmpeg -re -timeout 10000000 -i "http://45.67.136.25/3HfHLrEmIZ/caMjeGs0i3/342993?token=TEBZWURcEQ5AUFcABQ0BAgYBB1cKU1IGAFEMV1BXVQIDUQUBBFEKBAcTHRVGQBZSUwluX1cTXAYNUAxbUhoSQkQHQ2deUBEOWwMEBAEBSBVBAUNAVkM5XF1AD1ZZABwVQwtcXRUOAgNVCQUEDQZcBB5GVE5HVBRbWA5qBgRAWVRSQAsaFRgRWwxuVVJYVQpTEF4BGhFYFUUbWBdATRRTWEIMRUpOFgkWK2ATGxdRHENXCkJfXF9EDxsWRkBNFFlEaBBUS0NGVlUPVEMVDwRIFVMHRV9FVDlWVgxGQFsGHBVaA0lnVFtdWgdSRV5aWhcVCFUdFENYAhcDUwRRWAQHBhtAXFdZXUdbEG5BXlEWXgYDVwYPAAdKF1sLQRAAQlUVDVACCQcYEVYLRUNWQVE7QlwNRRQJEw1XSREXTkNUWUNFA0VdaFZDR0ALAwQEBFQHAkgTVFpFFFRNB2oAEUVvQlkLRRoNFlFEERMdFVddEEVTEFRpR0gWUBtYF0BNFEZoVA1VXVQWCRZAHRNAFw5UGxAMEwwDHURTSREXWFEaElZoAEFLFQ4DGEBAUltURxcVCEZdRxEdRFFcFFwBBGlbUk5ACxoEAgRWUQMHUgZWBlJXUQRXUQcCAV8BAAYDAlEHVFsIXBUYEUcLVRMNF1JWUlNVBwMCA1RUCFIFAVQFVlRUAQMODwEFAVACAAMNFkgVQQFCRVpeCBcDQFBQBA9SAwVbV1xSBAdQBgkIAwAFUgAAUgdQAlNXBQpTF05DX1FDFVgADwAMBwdaAwYAGRYJVG0JXlJWE1wXUgtWCT5ZXFNoA1dMUkZsUxBQUlIXGEZaUTtWRFJSA2pKB1ZAWwcASg" \
-          -i "logo.png" -filter_complex \
-          "[1:v]scale=iw*0.07:-1[logo];[0:v]eq=brightness=0.03:contrast=1.03:saturation=1.12[video];[video][logo]overlay=30:H-h-30" \
-          -vcodec libx264 -preset veryfast -profile:v high -level 4.1 -pix_fmt yuv420p -g 50 \
-          -b:v 4500k -maxrate 4500k -bufsize 9000k \
-          -acodec copy -map_metadata -1 \
-          -f flv "rtmps://fa723fc1b171.global-contribute.live-video.net/app/sk_us-west-2_LaBpq1zvOoGp_dNaI2aVsrGV4jhzjcuurJAwq7XjtHi"
-
+          # حلقة تكرار لضمان استمرار العمل في حال انقطع المصدر
+          while true; do
+            echo "Starting stream with Audio Copy..."
+            ffmpeg -re -hide_banner -loglevel error \
+            -reconnect 1 -reconnect_at_eof 1 -reconnect_streamed 1 -reconnect_delay_max 5 \
+            -i "http://45.67.136.25/3HfHLrEmIZ/caMjeGs0i3/342993?token=TEBZWURcEQ5AUFcABQ0BAgYBB1cKU1IGAFEMV1BXVQIDUQUBBFEKBAcTHRVGQBZSUwluX1cTXAYNUAxbUhoSQkQHQ2deUBEOWwMEBAEBSBVBAUNAVkM5XF1AD1ZZABwVQwtcXRUOAgNVCQUEDQZcBB5GVE5HVBRbWA5qBgRAWVRSQAsaFRgRWwxuVVJYVQpTEF4BGhFYFUUbWBdATRRTWEIMRUpOFgkWK2ATGxdRHENXCkJfXF9EDxsWRkBNFFlEaBBUS0NGVlUPVEMVDwRIFVMHRV9FVDlWVgxGQFsGHBVaA0lnVFtdWgdSRV5aWhcVCFUdFENYAhcDUwRRWAQHBhtAXFdZXUdbEG5BXlEWXgYDVwYPAAdKF1sLQRAAQlUVDVACCQcYEVYLRUNWQVE7QlwNRRQJEw1XSREXTkNUWUNFA0VdaFZDR0ALAwQEBFQHAkgTVFpFFFRNB2oAEUVvQlkLRRoNFlFEERMdFVddEEVTEFRpR0gWUBtYF0BNFEZoVA1VXVQWCRZAHRNAFw5UGxAMEwwDHURTSREXWFEaElZoAEFLFQ4DGEBAUltURxcVCEZdRxEdRFFcFFwBBGlbUk5ACxoEAgRWUQMHUgZWBlJXUQRXUQcCAV8BAAYDAlEHVFsIXBUYEUcLVRMNF1JWUlNVBwMCA1RUCFIFAVQFVlRUAQMODwEFAVACAAMNFkgVQQFCRVpeCBcDQFBQBA9SAwVbV1xSBAdQBgkIAwAFUgAAUgdQAlNXBQpTF05DX1FDFVgADwAMBwdaAwYAGRYJVG0JXlJWE1wXUgtWCT5ZXFNoA1dMUkZsUxBQUlIXGEZaUTtWRFJSA2pKB1ZAWwcASg" \
+            -i "logo.png" \
+            -filter_complex \
+            "[1:v]scale=iw*0.07:-1[logo]; \
+             [0:v]eq=brightness=0.07:contrast=1.18:saturation=1.45:gamma=0.92[video]; \
+             [video][logo]overlay=30:H-h-30:format=auto,format=yuv420p" \
+            -vcodec libx264 -preset ultrafast -profile:v high -level 4.2 -tune zerolatency -g 100 \
+            -b:v 5000k -maxrate 5000k -bufsize 10000k \
+            -acodec copy -map_metadata -1 \
+            -f flv "rtmps://fa723fc1b171.global-contribute.live-video.net/app/sk_us-west-2_LaBpq1zvOoGp_dNaI2aVsrGV4jhzjcuurJAwq7XjtHi"
+            
+            echo "Stream interrupted. Reconnecting in 5 seconds..."
+            sleep 5
+          done
