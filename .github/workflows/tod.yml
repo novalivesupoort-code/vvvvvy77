@@ -1,4 +1,4 @@
-name: Kick Stream - High Quality & Audio Copy
+name: Kick Stream - Fast Start
 
 on:
   workflow_dispatch:
@@ -6,36 +6,19 @@ on:
 jobs:
   stream:
     runs-on: ubuntu-latest
-
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
 
       - name: Install FFmpeg
         run: sudo apt-get update && sudo apt-get install -y ffmpeg
 
-      - name: Start Stream with Infinite Loop & Audio Copy
+      - name: Start Stream Immediately
         run: |
-          # حلقة تكرار لضمان استمرار العمل في حال انقطع المصدر
-          while true; do
-            echo "Starting stream with Audio Copy..."
-            ffmpeg -re -hide_banner -loglevel error \
-            -reconnect 1 -reconnect_at_eof 1 -reconnect_streamed 1 -reconnect_delay_max 5 \
-            -i "http://virtualdbxv.com:8080/alwan1hd/index.m3u8" \
-            -i "logo.png" \
-            -filter_complex \
-            "[1:v]scale=iw*0.07:-1[logo]; \
-             [0:v]eq=brightness=0.06:contrast=1.18:saturation=1.45:gamma=0.92[video]; \
-             [video][logo]overlay=30:H-h-30:format=auto,format=yuv420p" \
-            -vcodec libx264 -preset ultrafast -profile:v high -level 4.2 -tune zerolatency -g 100 \
-            -b:v 5000k -maxrate 5000k -bufsize 10000k \
-            -acodec copy -map_metadata -1 \
-            -f flv "rtmps://fa723fc1b171.global-contribute.live-video.net/app/sk_us-west-2_LaBpq1zvOoGp_dNaI2aVsrGV4jhzjcuurJAwq7XjtHi"
-            
-            echo "Stream interrupted. Reconnecting in 5 seconds..."
-            sleep 5
-          done
-
+          ffmpeg -re -timeout 10000000 -i "http://6861967.t03m.cc/live/0661090770/8725012301/1260602.m3u8?token=ShoJV0NcEgMVXQZaVgkPAwVUVFwFVAVTUAJTBAoGBFMAXAUOAVUEDwUaSUEXREVVBwg6DFUXC1UBAwBQCAdOR0RLBERvXVQbDRpTW1IBDgZRR0lHRVxcAREPAEoaRQsBEwJDBwEBBQkGAEdPRlVPRAMXCwRdalUBRVxTAxoPDBBdVE0UX1pvXVJVBA0AEg0SVkdJR1hGQUYJW0UKVBlAB1hME1dEURIDFQldUlQSGxIFChALRUdIRgkXcSMaGUAASUwEWENdX1cVAkcOV0UPEkpHDBZuR1QXR0dVB1VQEEcLGlEUHBZdWE9nBgwKXlJTEgwKC0IXC0YCFxxEVVoMDEVXE2lAXVQbDRpXV1ICAAVeRxg" \
+          -i "logo.png" -filter_complex \
+          "[1:v]scale=iw*0.07:-1[logo];[0:v]eq=brightness=0.03:contrast=1.03:saturation=1.12[video];[video][logo]overlay=30:H-h-30" \
+          -vcodec libx264 -preset veryfast -profile:v high -level 4.1 -pix_fmt yuv420p -g 50 \
+          -b:v 4500k -maxrate 4500k -bufsize 9000k \
+          -acodec copy -map_metadata -1 \
+          -f flv "rtmps://fa723fc1b171.global-contribute.live-video.net/app/sk_us-west-2_LaBpq1zvOoGp_dNaI2aVsrGV4jhzjcuurJAwq7XjtHi"
