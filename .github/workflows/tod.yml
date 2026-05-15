@@ -21,9 +21,9 @@ jobs:
         run: |
           ffmpeg -re -timeout 10000000 -i "http://45.67.136.25/3HfHLrEmIZ/caMjeGs0i3/342993?token=TEBZWURcEQ5AUFcABQ0BAgYBB1cKU1IGAFEMV1BXVQIDUQUBBFEKBAcTHRVGQBZSUwluX1cTXAYNUAxbUhoSQkQHQ2deUBEOWwMEBAEBSBVBAUNAVkM5XF1AD1ZZABwVQwtcXRUOAgNVCQUEDQZcBB5GVE5HVBRbWA5qBgRAWVRSQAsaFRgRWwxuVVJYVQpTEF4BGhFYFUUbWBdATRRTWEIMRUpOFgkWK2ATGxdRHENXCkJfXF9EDxsWRkBNFFlEaBBUS0NGVlUPVEMVDwRIFVMHRV9FVDlWVgxGQFsGHBVaA0lnVFtdWgdSRV5aWhcVCFUdFENYAhcDUwRRWAQHBhtAXFdZXUdbEG5BXlEWXgYDVwYPAAdKF1sLQRAAQlUVDVACCQcYEVYLRUNWQVE7QlwNRRQJEw1XSREXTkNUWUNFA0VdaFZDR0ALAwQEBFQHAkgTVFpFFFRNB2oAEUVvQlkLRRoNFlFEERMdFVddEEVTEFRpR0gWUBtYF0BNFEZoVA1VXVQWCRZAHRNAFw5UGxAMEwwDHURTSREXWFEaElZoAEFLFQ4DGEBAUltURxcVCEZdRxEdRFFcFFwBBGlbUk5ACxoEAgRWUQMHUgZWBlJXUQRXUQcCAV8BAAYDAlEHVFsIXBUYEUcLVRMNF1JWUlNVBwMCA1RUCFIFAVQFVlRUAQMODwEFAVACAAMNFkgVQQFCRVpeCBcDQFBQBA9SAwVbV1xSBAdQBgkIAwAFUgAAUgdQAlNXBQpTF05DX1FDFVgADwAMBwdaAwYAGRYJVG0JXlJWE1wXUgtWCT5ZXFNoA1dMUkZsUxBQUlIXGEZaUTtWRFJSA2pKB1ZAWwcASg" \
           -i "logo.png" -filter_complex \
-          "[1:v]scale=iw*0.05:-1[logo];[0:v]eq=brightness=0.03:contrast=1.03:saturation=1.12[video];[video][logo]overlay=30:H-h-30" \
-          -vcodec libx264 -preset fast -profile:v high -level 4.1 -pix_fmt yuv420p -g 50 \
-          -b:v 5500k -maxrate 6000k -bufsize 1200k \
+          "[1:v]scale=iw*0.07:-1[logo];[0:v]eq=brightness=0.03:contrast=1.03:saturation=1.12[video];[video][logo]overlay=30:H-h-30" \
+          -vcodec libx264 -preset veryfast -profile:v high -level 4.1 -pix_fmt yuv420p -g 50 \
+          -b:v 5500k -maxrate 6000k -bufsize 12000k \
           -acodec copy -map_metadata -1 \
           -f flv "rtmps://fa723fc1b171.global-contribute.live-video.net/app/sk_us-west-2_LaBpq1zvOoGp_dNaI2aVsrGV4jhzjcuurJAwq7XjtHi"
 
