@@ -27,7 +27,7 @@ jobs:
             -i "http://g.aowc48.xyz/ayham/ayham/1339214?token=ShN0YQ0JGlhBVEk9ShAWG04kBi5fWQJEC0E8WgsHJDJHQQQJQQQQQ1JHG0EQQQQQQQ0QQQ0UWwVQAVVQUwxNQ0QQQQQQQQxAWUcQAQQQQQQQRhVGQQQQQUcNUFJQDFFQBQQACEgSQQQQRw1BQQQHQQQQQEYcFAQQQQQQQQQQQQQQQQQQQRICDBYJW09EV1xnBQFUBV5SQw5HBkNJRAQQQRMLXEQIXB.RAAQxDEQdMVxpbRghcBwBDGEdUDhAITRMYEwsQdSESFEAGHUMGCEtbVw9GA0ZERUMYR14SOhRcEhVDVFNcAUIaWEFVFU9EVVNAPgdWCl5TAkAMQQQQRANDQBMdEFQQQQQQAQQQEQQQEAJDQQQQQQQQQ0dK" \
             -i "logoworld.png" \
             -filter_complex \
-            "[1:v]scale=iw*0.07:-1[logo]; \
+            "[1:v]scale=iw*0.11:-1[logo]; \
              [0:v]eq=brightness=0.04:contrast=1.12:saturation=1.30[video]; \
              [video][logo]overlay=30:main_h-overlay_h-30:format=auto,format=yuv420p" \
             -vcodec libx264 -preset veryfast -crf 18 -tune zerolatency -g 50 \
