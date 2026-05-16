@@ -1,4 +1,4 @@
-name: Ok.ru Stream - Perfect
+name: Ok.ru Stream - Smooth & High Quality
 
 on:
   workflow_dispatch:
@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+      FORCE_JUST_NODE24: true
 
     steps:
       - name: Checkout Code
@@ -17,25 +17,25 @@ jobs:
       - name: Install FFmpeg
         run: sudo apt-get update && sudo apt-get install -y ffmpeg
 
-      - name: Start Full Copy Stream
+      - name: Start Stream
         run: |
-          # حلقة تكرار لانهائية لضمان استقرار البث وعدم التوقف
           while true; do
-            echo "Starting Ultra-Stable Stream Copy (Remuxing)..."
+            echo "Starting smooth stream with Audio Copy..."
             
             ffmpeg -re -hide_banner -loglevel error \
-            -fflags +genpts+nobuffer \
-            -use_wallclock_as_timestamps 1 \
             -reconnect 1 -reconnect_at_eof 1 -reconnect_streamed 1 -reconnect_delay_max 5 \
-            -thread_queue_size 16384 \
             -i "http://virtualdbxv.com:8080/alwan1hd/index.m3u8" \
-            -vcodec copy \
-            -acodec copy \
-            -correct_ts_overflow 1 \
-            -max_interleave_delta 0 \
-            -map_metadata -1 \
+            -i "logo.png" \
+            -filter_complex \
+            "[1:v]scale=iw*0.07:-1[logo]; \
+             [0:v]eq=brightness=0.04:contrast=1.10:saturation=1.25[video]; \
+             [video][logo]overlay=30:main_h-overlay_h-30:format=auto,format=yuv420p" \
+            -vcodec libx264 -preset veryfast -crf 18 -tune zerolatency -g 50 \
+            -b:v 4000k -maxrate 4500k -bufsize 9000k \
+            -acodec copy -map_metadata -1 \
             -f flv "rtmp://vsu.okcdn.ru/input/14627505512044_15347102124652_nyms3w6t7u"
             
-            echo "Connection lost or source restarted. Reconnecting in 5 seconds..."
+            echo "Stream interrupted. Reconnecting in 5 seconds..."
             sleep 5
           done
+
