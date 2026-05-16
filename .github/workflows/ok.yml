@@ -1,0 +1,41 @@
+name: Ok.ru Stream - Perfect
+
+on:
+  workflow_dispatch:
+
+jobs:
+  stream:
+    runs-on: ubuntu-latest
+
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Install FFmpeg
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+
+      - name: Start Full Copy Stream
+        run: |
+          # حلقة تكرار لانهائية لضمان استقرار البث وعدم التوقف
+          while true; do
+            echo "Starting Ultra-Stable Stream Copy (Remuxing)..."
+            
+            ffmpeg -re -hide_banner -loglevel error \
+            -fflags +genpts+async+nobuffer \
+            -reconnect 1 -reconnect_at_eof 1 -reconnect_streamed 1 -reconnect_delay_max 5 \
+            -thread_queue_size 16384 \
+            -i "http://virtualdbxv.com:8080/alwan1hd/index.m3u8" \
+            -vcodec copy \
+            -acodec copy \
+            -correct_ts_overflow 1 \
+            -max_interleave_delta 0 \
+            -map_metadata -1 \
+            -f flv "rtmp://vsu.okcdn.ru/input/14627505512044_15347102124652_nyms3w6t7u"
+            
+            echo "Connection lost or source restarted. Reconnecting in 5 seconds..."
+            sleep 5
+          done
+
