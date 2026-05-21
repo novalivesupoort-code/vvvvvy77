@@ -24,14 +24,14 @@ jobs:
             
             ffmpeg -re -hide_banner -loglevel error \
             -reconnect 1 -reconnect_at_eof 1 -reconnect_streamed 1 -reconnect_delay_max 5 \
-            -i "http://off6.lynxcontents.click:2086/live/206923845871/mI45UxamwN/255946.m3u8?data=s20NH37eYYxIyYkfVf-wfNYt512-3tA2bHsbQMCJ-3KZTF7ezkDqUAmqWvMHjW3-vmYez2NU81uztyr43Uc3GyIMkuac1_iKWmUB11eVWMZwVrXC9UIDca_znRmlEeAkz8tjyd79xcJYF91fhWEavA%3D%3D&expires=1779145528" \
+            -i "http://149.57.81.179/live/g/g/1339213.m3u8?token=ShNaUBdYGlhBVlYHAw4HDFhSAVdUVVAHUFRVUQdaWFcICVQAVgQNVwZHG0EVTEBdAAlmDVQUWwVWBFhXVwpNQ0RCV0M7WVxAWUcCW18JBQlXRhVGRF8MUUcNUUlESQgFEwsQA1YFC1pXUxVPRF1KTAQWVwVcaQVRE14CAEQDDxRdXR4TC15nBgYIVg0CGggaUUYVRllFERZfWRQJChVDA1hFQFAQVRpYQVYOVFMaHhoCC0wKREQYFl8VICBEFUMESUVXXxdZVwxBXxUOVU0KGk1GUBdvRARHEUUEBAtcE0MLEwITSBJVAxs6VAwIVldbFQ1WCkMUWxZUFU1HC1YPCEVeQG4UWVxAWUcFUFUABRoc" \
             -i "logoworld.png" \
             -filter_complex \
             "[1:v]scale=iw*0.10:-1[logo]; \
              [0:v]eq=brightness=0.04:contrast=1.12:saturation=1.30[video]; \
              [video][logo]overlay=30:main_h-overlay_h-30:format=auto,format=yuv420p" \
             -vcodec libx264 -preset veryfast -crf 18 -tune zerolatency -g 50 \
-            -b:v 5000k -maxrate 5500k -bufsize 11000k \
+            -b:v 4500k -maxrate 4500k -bufsize 9500k \
             -acodec aac -b:a 128k -ar 44100 -async 1 \
             -f flv "rtmp://vsu.okcdn.ru/input/14627505512044_15347102124652_nyms3w6t7u"
             
