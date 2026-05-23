@@ -22,6 +22,13 @@ jobs:
         run: |
           RTMP_URL="rtmp://vsu.okcdn.ru/input/14627505512044_15347102124652_nyms3w6t7u"
           SOURCE_URL="http://g.mztk02.cc/ayham/ayham/1339213?token=ShN0YQ0JGlhBVEk9ShAWG04kBi5fWQJEC0E8WgsHJDJHQQQJQQQQQ1JHG0EQQQQQQQ0QQQ0UWwVQAVVQUwxNQ0QQQQQQQQxAWUcQAQQQQQQQRhVGQQQQQUcNUFJQDFFQBQQACEgSQQQQRw1BQQQHQQQQQEYcFAQQQQQQQQQQQQQQQQQQQRICDBYJW09EV1xnBQFUBV5SQw5HBkNJRAQQQRMLXEQIXB.RAAQxDEQdMVxpbRghcBwBDGEdUDhAITRMYEwsQdSESFEAGHUMGCEtbVw9GA0ZERUMYR14SOhRcEhVDVFNcAUIaWEFVFU9EVVNAPgdWCl5TAkAMQQQQRANDQBMdEFQQQQQQAQQQEQQQEAJDQQQQQQQQQ0dK"
+
+          # التحقق من وجود ملف اللوجو
+          if [ ! -f "logoworld.png" ]; then
+            echo "❌ Logo file not found!"
+            exit 1
+          fi
+
           FAIL_COUNT=0
           MAX_FAILS=10
 
@@ -34,33 +41,25 @@ jobs:
               -hide_banner \
               -loglevel warning \
               -stats \
-              \
               -reconnect 1 \
               -reconnect_at_eof 1 \
               -reconnect_streamed 1 \
               -reconnect_delay_max 10 \
               -reconnect_on_network_error 1 \
               -timeout 15000000 \
-              -fflags +discardcorrupt \
-              -analyzeduration 3000000 \
-              -probesize 5000000 \
+              -fflags +discardcorrupt+genpts \
+              -analyzeduration 5000000 \
+              -probesize 10000000 \
               -i "$SOURCE_URL" \
-              \
               -i "logoworld.png" \
-              \
               -filter_complex \
-                "[1:v]scale=iw*0.10:-1:flags=lanczos[logo];
-                 [0:v]setpts=PTS,
-                 eq=brightness=0.04:contrast=1.12:saturation=1.30,
-                 [logo]overlay=30:main_h-overlay_h-30:format=auto,
-                 format=yuv420p,
-                 setsar=1" \
-              \
+                "[0:v]setpts=PTS,eq=brightness=0.04:contrast=1.12:saturation=1.30[main];
+                 [1:v][main]scale2ref=iw*0.08:ih*0.05[logo_resized][main_ref];
+                 [main_ref][logo_resized]overlay=W-w-30:H-h-30:format=auto,format=yuv420p,setsar=1" \
               -c:v libx264 \
               -preset veryfast \
               -tune zerolatency \
               -profile:v high \
-              -level:v 4.1 \
               -crf 18 \
               -b:v 4500k \
               -maxrate 5000k \
@@ -71,14 +70,11 @@ jobs:
               -bf 2 \
               -refs 3 \
               -x264-params "nal-hrd=cbr:force-cfr=1" \
-              \
               -c:a aac \
               -b:a 160k \
               -ar 44100 \
               -ac 2 \
               -profile:a aac_low \
-              -aac_coder twoloop \
-              \
               -f flv \
               -flvflags no_duration_filesize \
               "$RTMP_URL"
