@@ -18,12 +18,11 @@ jobs:
           sudo apt-get install -y ffmpeg
           ffmpeg -version | head -1
 
-      - name: Start Native 1080p Stream
+      - name: Start Stream
         run: |
           RTMP_URL="rtmp://vsu.okcdn.ru/input/14627505512044_15347102124652_nyms3w6t7u"
-          SOURCE_URL="http://g.mtvs50.xyz/ayham/ayham/1339216?token=ShN0YQ0JGlhBVEk9ShAWG04kBi5fWQJEC0E8WgsHJDJHQQQJQQQQQ1JHG0EQQQQQQQ0QQQ0UWwVQAVVQUwxNQ0QQQQQQQQxAWUcQAQQQQQQQRhVGQQQQQUcNUFJQDFFQBQQACEgSQQQQRw1BQQQHQQQQQEYcFAQQQQQQQQQQQQQQQQQQQRICDBYJW09EV1xnBQFUBV5SQw5HBkNJRAQQQRMLXEQIXB.RAAQxDEQdMVxpbRghcBwBDGEdUDhAITRMYEwsQdSESFEAGHUMGCEtbVw9GA0ZERUMYR14SOhRcEhVDVFNcAUIaWEFVFU9EVVNAPgdWCl5TAkAMQQQQRANDQBMdEFQQQQQQAQQQEQQQEAJDQQQQQQQQQ0dK"
+          SOURCE_URL="http://g.mztk02.cc/ayham/ayham/1339213?token=ShN0YQ0JGlhBVEk9ShAWG04kBi5fWQJEC0E8WgsHJDJHQQQJQQQQQ1JHG0EQQQQQQQ0QQQ0UWwVQAVVQUwxNQ0QQQQQQQQxAWUcQAQQQQQQQRhVGQQQQQUcNUFJQDFFQBQQACEgSQQQQRw1BQQQHQQQQQEYcFAQQQQQQQQQQQQQQQQQQQRICDBYJW09EV1xnBQFUBV5SQw5HBkNJRAQQQRMLXEQIXB.RAAQxDEQdMVxpbRghcBwBDGEdUDhAITRMYEwsQdSESFEAGHUMGCEtbVw9GA0ZERUMYR14SOhRcEhVDVFNcAUIaWEFVFU9EVVNAPgdWCl5TAkAMQQQQRANDQBMdEFQQQQQQAQQQEQQQEAJDQQQQQQQQQ0dK"
 
-          # التحقق من وجود ملف اللوجو
           if [ ! -f "logoworld.png" ]; then
             echo "❌ Logo file not found!"
             exit 1
@@ -45,79 +44,46 @@ jobs:
               -reconnect_at_eof 1 \
               -reconnect_streamed 1 \
               -reconnect_delay_max 10 \
-              -reconnect_on_network_error 1 \
-              -timeout 30000000 \
-              -fflags +discardcorrupt+genpts+igndts+nobuffer \
-              -flags low_delay \
-              -analyzeduration 10000000 \
-              -probesize 20000000 \
+              -timeout 15000000 \
+              -fflags +discardcorrupt+genpts \
               -i "$SOURCE_URL" \
               -i "logoworld.png" \
               -filter_complex \
-                "[0:v]setpts=PTS,
-                 eq=brightness=0.02:contrast=1.10:saturation=1.20:gamma=1.02,
-                 unsharp=5:5:0.8:3:3:0.4,
-                 hqdn3d=2:1:4:3[main];
-                 [1:v]scale=120:-1:flags=lanczos[logo];
+                "[1:v][0:v]scale2ref=iw*0.08:ih*0.05[logo][main];
                  [main][logo]overlay=30:main_h-overlay_h-30:format=auto,format=yuv420p,setsar=1" \
               -c:v libx264 \
               -preset veryfast \
               -tune zerolatency \
               -profile:v high \
-              -level:v 4.1 \
-              -crf 17 \
-              -b:v 5000k \
-              -maxrate 5500k \
-              -minrate 4500k \
-              -bufsize 10000k \
+              -crf 18 \
+              -b:v 4500k \
+              -maxrate 5000k \
+              -bufsize 9000k \
               -g 50 \
               -keyint_min 25 \
-              -sc_threshold 40 \
-              -bf 3 \
-              -refs 4 \
-              -b_strategy 2 \
-              -subq 7 \
-              -qcomp 0.7 \
-              -qmin 10 \
-              -qmax 51 \
-              -me_range 24 \
-              -trellis 2 \
-              -psy-rd 1.0:0.15 \
-              -aq-mode 2 \
-              -aq-strength 0.8 \
-              -x264-params "nal-hrd=vbr:force-cfr=1:deblock=-1,-1:no-dct-decimate=1" \
               -c:a aac \
-              -b:a 192k \
-              -ar 48000 \
+              -b:a 128k \
+              -ar 44100 \
               -ac 2 \
-              -profile:a aac_low \
-              -async 1 \
-              -vsync 2 \
-              -max_muxing_queue_size 2048 \
-              -muxpreload 2 \
-              -muxdelay 1 \
               -f flv \
-              -flvflags no_duration_filesize \
-              "$RTMP_URL" \
-              2> ffmpeg_error.log
+              "$RTMP_URL"
 
             EXIT_CODE=$?
-            
-            # عرض آخر 10 أسطر من الأخطاء
             echo "⚠ FFmpeg exited with code: $EXIT_CODE"
-            echo "📋 Last errors:"
-            tail -10 ffmpeg_error.log 2>/dev/null || echo "No error log"
 
-            if [ $EXIT_CODE -eq 0 ] || [ $EXIT_CODE -eq 255 ]; then
-              echo "✅ Stream ended or interrupted. Restarting..."
+            if [ $EXIT_CODE -eq 0 ]; then
+              echo "✅ Stream ended cleanly."
+              break
+            else
+              FAIL_COUNT=$((FAIL_COUNT + 1))
+              WAIT=$((FAIL_COUNT * 3))
+              [ $WAIT -gt 30 ] && WAIT=30
+              echo "🔄 Reconnecting in ${WAIT}s... (Fail $FAIL_COUNT/$MAX_FAILS)"
+              sleep $WAIT
             fi
-            
-            FAIL_COUNT=$((FAIL_COUNT + 1))
-            WAIT=$((FAIL_COUNT * 3))
-            [ $WAIT -gt 30 ] && WAIT=30
-            echo "🔄 Reconnecting in ${WAIT}s... (Fail $FAIL_COUNT/$MAX_FAILS)"
-            sleep $WAIT
           done
 
-          echo "❌ Max reconnect attempts reached. Exiting."
-          exit 1
+          if [ $FAIL_COUNT -ge $MAX_FAILS ]; then
+            echo "❌ Max reconnect attempts reached. Exiting."
+            exit 1
+          fi
