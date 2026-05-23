@@ -1,4 +1,4 @@
-name: Ok.ru TS Stream - Native TS
+name: 1080p@25FPS
 
 on:
   workflow_dispatch:
