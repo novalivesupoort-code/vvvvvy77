@@ -6,36 +6,99 @@ on:
 jobs:
   stream:
     runs-on: ubuntu-latest
-
-    env:
-      FORCE_JUST_NODE24: true
+    timeout-minutes: 350
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Install FFmpeg
-        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - name: Install FFmpeg (Latest)
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y ffmpeg
+          ffmpeg -version | head -1
 
       - name: Start Native 1080p Stream
         run: |
-          while true; do
-            echo "Starting native 1080p stream with OK.ru optimized audio..."
-            
-            ffmpeg -re -hide_banner -loglevel error \
-            -reconnect 1 -reconnect_at_eof 1 -reconnect_streamed 1 -reconnect_delay_max 5 \
-            -i "http://g.mztk02.cc/ayham/ayham/1339213?token=ShN0YQ0JGlhBVEk9ShAWG04kBi5fWQJEC0E8WgsHJDJHQQQJQQQQQ1JHG0EQQQQQQQ0QQQ0UWwVQAVVQUwxNQ0QQQQQQQQxAWUcQAQQQQQQQRhVGQQQQQUcNUFJQDFFQBQQACEgSQQQQRw1BQQQHQQQQQEYcFAQQQQQQQQQQQQQQQQQQQRICDBYJW09EV1xnBQFUBV5SQw5HBkNJRAQQQRMLXEQIXB.RAAQxDEQdMVxpbRghcBwBDGEdUDhAITRMYEwsQdSESFEAGHUMGCEtbVw9GA0ZERUMYR14SOhRcEhVDVFNcAUIaWEFVFU9EVVNAPgdWCl5TAkAMQQQQRANDQBMdEFQQQQQQAQQQEQQQEAJDQQQQQQQQQ0dK" \
-            -i "logoworld.png" \
-            -filter_complex \
-            "[1:v]scale=iw*0.10:-1[logo]; \
-             [0:v]eq=brightness=0.04:contrast=1.12:saturation=1.30[video]; \
-             [video][logo]overlay=30:main_h-overlay_h-30:format=auto,format=yuv420p" \
-            -vcodec libx264 -preset veryfast -crf 18 -tune zerolatency -g 50 \
-            -b:v 4500k -maxrate 4500k -bufsize 9500k \
-            -acodec aac -b:a 128k -ar 44100 -async 1 \
-            -f flv "rtmp://vsu.okcdn.ru/input/14627505512044_15347102124652_nyms3w6t7u"
-            
-            echo "Stream interrupted. Reconnecting in 5 seconds..."
-            sleep 5
+          RTMP_URL="rtmp://vsu.okcdn.ru/input/14627505512044_15347102124652_nyms3w6t7u"
+          SOURCE_URL="http://g.mztk02.cc/ayham/ayham/1339213?token=ShN0YQ0JGlhBVEk9ShAWG04kBi5fWQJEC0E8WgsHJDJHQQQJQQQQQ1JHG0EQQQQQQQ0QQQ0UWwVQAVVQUwxNQ0QQQQQQQQxAWUcQAQQQQQQQRhVGQQQQQUcNUFJQDFFQBQQACEgSQQQQRw1BQQQHQQQQQEYcFAQQQQQQQQQQQQQQQQQQQRICDBYJW09EV1xnBQFUBV5SQw5HBkNJRAQQQRMLXEQIXB.RAAQxDEQdMVxpbRghcBwBDGEdUDhAITRMYEwsQdSESFEAGHUMGCEtbVw9GA0ZERUMYR14SOhRcEhVDVFNcAUIaWEFVFU9EVVNAPgdWCl5TAkAMQQQQRANDQBMdEFQQQQQQAQQQEQQQEAJDQQQQQQQQQ0dK"
+          FAIL_COUNT=0
+          MAX_FAILS=10
+
+          while [ $FAIL_COUNT -lt $MAX_FAILS ]; do
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo "▶ Starting stream | Attempt: $((FAIL_COUNT + 1))"
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+            ffmpeg \
+              -hide_banner \
+              -loglevel warning \
+              -stats \
+              \
+              -reconnect 1 \
+              -reconnect_at_eof 1 \
+              -reconnect_streamed 1 \
+              -reconnect_delay_max 10 \
+              -reconnect_on_network_error 1 \
+              -timeout 15000000 \
+              -fflags +discardcorrupt \
+              -analyzeduration 3000000 \
+              -probesize 5000000 \
+              -i "$SOURCE_URL" \
+              \
+              -i "logoworld.png" \
+              \
+              -filter_complex \
+                "[1:v]scale=iw*0.10:-1:flags=lanczos[logo];
+                 [0:v]setpts=PTS,
+                 eq=brightness=0.04:contrast=1.12:saturation=1.30,
+                 [logo]overlay=30:main_h-overlay_h-30:format=auto,
+                 format=yuv420p,
+                 setsar=1" \
+              \
+              -c:v libx264 \
+              -preset veryfast \
+              -tune zerolatency \
+              -profile:v high \
+              -level:v 4.1 \
+              -crf 18 \
+              -b:v 4500k \
+              -maxrate 5000k \
+              -bufsize 9000k \
+              -g 60 \
+              -keyint_min 60 \
+              -sc_threshold 0 \
+              -bf 2 \
+              -refs 3 \
+              -x264-params "nal-hrd=cbr:force-cfr=1" \
+              \
+              -c:a aac \
+              -b:a 160k \
+              -ar 44100 \
+              -ac 2 \
+              -profile:a aac_low \
+              -aac_coder twoloop \
+              \
+              -f flv \
+              -flvflags no_duration_filesize \
+              "$RTMP_URL"
+
+            EXIT_CODE=$?
+            echo "⚠ FFmpeg exited with code: $EXIT_CODE"
+
+            if [ $EXIT_CODE -eq 0 ]; then
+              echo "✅ Stream ended cleanly."
+              break
+            else
+              FAIL_COUNT=$((FAIL_COUNT + 1))
+              WAIT=$((FAIL_COUNT * 3))
+              [ $WAIT -gt 30 ] && WAIT=30
+              echo "🔄 Reconnecting in ${WAIT}s... (Fail $FAIL_COUNT/$MAX_FAILS)"
+              sleep $WAIT
+            fi
           done
 
+          if [ $FAIL_COUNT -ge $MAX_FAILS ]; then
+            echo "❌ Max reconnect attempts reached. Exiting."
+            exit 1
+          fi
