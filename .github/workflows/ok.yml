@@ -1,4 +1,4 @@
-name: 1080p@25FPS
+name: Ok.ru TS Stream - Native TS
 
 on:
   workflow_dispatch:
@@ -47,8 +47,8 @@ jobs:
               -reconnect_on_network_error 1 \
               -timeout 30000000 \
               -fflags +discardcorrupt+genpts+igndts \
-              -err_detect ignore_err \
-              -ec favor_intervention \
+              -analyzeduration 10000000 \
+              -probesize 20000000 \
               -i "$SOURCE_URL" \
               -i "logoworld.png" \
               -filter_complex \
