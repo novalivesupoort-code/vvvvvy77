@@ -21,7 +21,7 @@ jobs:
       - name: Start Native 1080p Stream
         run: |
           RTMP_URL="rtmp://vsu.okcdn.ru/input/14627505512044_15347102124652_nyms3w6t7u"
-          SOURCE_URL="http://g.mztk02.cc/ayham/ayham/1339213?token=ShN0YQ0JGlhBVEk9ShAWG04kBi5fWQJEC0E8WgsHJDJHQQQJQQQQQ1JHG0EQQQQQQQ0QQQ0UWwVQAVVQUwxNQ0QQQQQQQQxAWUcQAQQQQQQQRhVGQQQQQUcNUFJQDFFQBQQACEgSQQQQRw1BQQQHQQQQQEYcFAQQQQQQQQQQQQQQQQQQQRICDBYJW09EV1xnBQFUBV5SQw5HBkNJRAQQQRMLXEQIXB.RAAQxDEQdMVxpbRghcBwBDGEdUDhAITRMYEwsQdSESFEAGHUMGCEtbVw9GA0ZERUMYR14SOhRcEhVDVFNcAUIaWEFVFU9EVVNAPgdWCl5TAkAMQQQQRANDQBMdEFQQQQQQAQQQEQQQEAJDQQQQQQQQQ0dK"
+          SOURCE_URL="http://g.mtvs50.xyz/ayham/ayham/1339216?token=ShN0YQ0JGlhBVEk9ShAWG04kBi5fWQJEC0E8WgsHJDJHQQQJQQQQQ1JHG0EQQQQQQQ0QQQ0UWwVQAVVQUwxNQ0QQQQQQQQxAWUcQAQQQQQQQRhVGQQQQQUcNUFJQDFFQBQQACEgSQQQQRw1BQQQHQQQQQEYcFAQQQQQQQQQQQQQQQQQQQRICDBYJW09EV1xnBQFUBV5SQw5HBkNJRAQQQRMLXEQIXB.RAAQxDEQdMVxpbRghcBwBDGEdUDhAITRMYEwsQdSESFEAGHUMGCEtbVw9GA0ZERUMYR14SOhRcEhVDVFNcAUIaWEFVFU9EVVNAPgdWCl5TAkAMQQQQRANDQBMdEFQQQQQQAQQQEQQQEAJDQQQQQQQQQ0dK"
 
           # التحقق من وجود ملف اللوجو
           if [ ! -f "logoworld.png" ]; then
@@ -47,7 +47,8 @@ jobs:
               -reconnect_delay_max 10 \
               -reconnect_on_network_error 1 \
               -timeout 30000000 \
-              -fflags +discardcorrupt+genpts+igndts \
+              -fflags +discardcorrupt+genpts+igndts+nobuffer \
+              -flags low_delay \
               -analyzeduration 10000000 \
               -probesize 20000000 \
               -i "$SOURCE_URL" \
@@ -60,8 +61,8 @@ jobs:
                  [1:v]scale=120:-1:flags=lanczos[logo];
                  [main][logo]overlay=30:main_h-overlay_h-30:format=auto,format=yuv420p,setsar=1" \
               -c:v libx264 \
-              -preset medium \
-              -tune film \
+              -preset veryfast \
+              -tune zerolatency \
               -profile:v high \
               -level:v 4.1 \
               -crf 17 \
@@ -91,28 +92,32 @@ jobs:
               -ac 2 \
               -profile:a aac_low \
               -async 1 \
-              -vsync 1 \
-              -max_muxing_queue_size 1024 \
+              -vsync 2 \
+              -max_muxing_queue_size 2048 \
+              -muxpreload 2 \
+              -muxdelay 1 \
               -f flv \
               -flvflags no_duration_filesize \
-              "$RTMP_URL"
+              "$RTMP_URL" \
+              2> ffmpeg_error.log
 
             EXIT_CODE=$?
+            
+            # عرض آخر 10 أسطر من الأخطاء
             echo "⚠ FFmpeg exited with code: $EXIT_CODE"
+            echo "📋 Last errors:"
+            tail -10 ffmpeg_error.log 2>/dev/null || echo "No error log"
 
-            if [ $EXIT_CODE -eq 0 ]; then
-              echo "✅ Stream ended cleanly."
-              break
-            else
-              FAIL_COUNT=$((FAIL_COUNT + 1))
-              WAIT=$((FAIL_COUNT * 3))
-              [ $WAIT -gt 30 ] && WAIT=30
-              echo "🔄 Reconnecting in ${WAIT}s... (Fail $FAIL_COUNT/$MAX_FAILS)"
-              sleep $WAIT
+            if [ $EXIT_CODE -eq 0 ] || [ $EXIT_CODE -eq 255 ]; then
+              echo "✅ Stream ended or interrupted. Restarting..."
             fi
+            
+            FAIL_COUNT=$((FAIL_COUNT + 1))
+            WAIT=$((FAIL_COUNT * 3))
+            [ $WAIT -gt 30 ] && WAIT=30
+            echo "🔄 Reconnecting in ${WAIT}s... (Fail $FAIL_COUNT/$MAX_FAILS)"
+            sleep $WAIT
           done
 
-          if [ $FAIL_COUNT -ge $MAX_FAILS ]; then
-            echo "❌ Max reconnect attempts reached. Exiting."
-            exit 1
-          fi
+          echo "❌ Max reconnect attempts reached. Exiting."
+          exit 1
