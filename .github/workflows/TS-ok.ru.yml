@@ -49,12 +49,8 @@ jobs:
               -i "$SOURCE_URL" \
               -i "logoworld.png" \
               -filter_complex \
-                "[0:v]setpts=PTS,
-                 eq=brightness=0.02:contrast=1.10:saturation=1.20:gamma=1.02,
-                 unsharp=5:5:0.8:3:3:0.4,
-                 hqdn3d=2:1:4:3[main];
-                 [1:v]scale=120:-1:flags=lanczos[logo];
-                 [main][logo]overlay=30:main_h-overlay_h-30:format=auto,format=yuv420p,setsar=1" \
+                "[1:v]scale=120:-1:flags=lanczos[logo];
+                 [0:v][logo]overlay=30:main_h-overlay_h-30:format=auto,format=yuv420p,setsar=1" \
               -c:v libx264 \
               -preset veryfast \
               -tune zerolatency \
@@ -66,7 +62,7 @@ jobs:
               -g 50 \
               -keyint_min 25 \
               -c:a aac \
-              -b:a 160k \
+              -b:a 128k \
               -ar 44100 \
               -ac 2 \
               -f flv \
