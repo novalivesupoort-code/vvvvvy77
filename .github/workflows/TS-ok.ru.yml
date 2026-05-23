@@ -49,7 +49,8 @@ jobs:
               -i "$SOURCE_URL" \
               -i "logoworld.png" \
               -filter_complex \
-                "[1:v][0:v]scale2ref=iw*0.08:-1[logo][main];
+                "[1:v]scale=iw:-1[logo_scaled];
+                 [logo_scaled][0:v]scale2ref=iw*0.08:-1[logo][main];
                  [main][logo]overlay=30:main_h-overlay_h-30:format=auto,format=yuv420p,setsar=1" \
               -c:v libx264 \
               -preset veryfast \
