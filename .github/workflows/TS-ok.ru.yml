@@ -49,13 +49,13 @@ jobs:
               -i "$SOURCE_URL" \
               -i "logoworld.png" \
               -filter_complex \
-                "[1:v][0:v]scale2ref=iw*0.08:ih*0.05[logo][main];
+                "[1:v][0:v]scale2ref=iw*0.08:-1[logo][main];
                  [main][logo]overlay=30:main_h-overlay_h-30:format=auto,format=yuv420p,setsar=1" \
               -c:v libx264 \
               -preset veryfast \
               -tune zerolatency \
               -profile:v high \
-              -crf 18 \
+              -crf 20 \
               -b:v 4500k \
               -maxrate 5000k \
               -bufsize 9000k \
