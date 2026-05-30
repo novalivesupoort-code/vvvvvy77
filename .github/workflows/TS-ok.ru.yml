@@ -21,7 +21,7 @@ jobs:
       - name: Start Stream
         run: |
           RTMP_URL="rtmp://vsu.okcdn.ru/input/14627505512044_15347102124652_nyms3w6t7u"
-          SOURCE_URL="http://172.110.216.180:8080/%204750034742512197/3177932697568638/460842?token=yXcaHyz.yXcUy.X.dbcc.ydzbXUzfHa.X.y.IR.ts.e57b5b45d1222e2e182a0f42fd17ec4fb486b1f589782a6261744f4e5f462ac8.31549.QXJpYSBTaGF0ZWwgUEpTQw"
+          SOURCE_URL="http://183.81.169.149:2095/4750034742512197/3177932697568638/460836?token=yXcaHyz.bXyay.X.cHzfU.ydzbyUaaUd.X.y.DE.ts.979e14029579a7028d596d2a1b31cc49d386e88853a4c088a43a866b4b7e5204.13335.Q2xvdWRmbGFyZQ"
 
           if [ ! -f "logoworld.png" ]; then
             echo "❌ Logo file not found!"
@@ -49,7 +49,7 @@ jobs:
               -i "$SOURCE_URL" \
               -i "logoworld.png" \
               -filter_complex \
-                "[1:v]scale=120:-1:flags=lanczos[logo];
+                "[1:v]scale=115:-1:flags=lanczos[logo];
                  [0:v][logo]overlay=30:main_h-overlay_h-30:format=auto,format=yuv420p,setsar=1" \
               -c:v libx264 \
               -preset veryfast \
