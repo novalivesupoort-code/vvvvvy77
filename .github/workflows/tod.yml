@@ -1,35 +1,47 @@
-name: Kick Stream - Fast Start
+name: Stream
 
 on:
   workflow_dispatch:
 
 jobs:
   stream:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      - name: Install FFmpeg
-        run: sudo apt-get update && sudo apt-get install -y ffmpeg
-
-      - name: Start Stream Immediately
+      - name: Install Latest FFmpeg (7.x)
         run: |
-          ffmpeg -re -timeout 10000000 \
-          -i "http://6861967.t03m.cc/live/0661090770/8725012301/1260602.m3u8?token=ShoJV0NcEgMVXQZaVgkPAwVUVFwFVAVTUAJTBAoGBFMAXAUOAVUEDwUaSUEXREVVBwg6DFUXC1UBAwBQCAdOR0RLBERvXVQbDRpTW1IBDgZRR0lHRVxcAREPAEoaRQsBEwJDBwEBBQkGAEdPRlVPRAMXCwRdalUBRVxTAxoPDBBdVE0UX1pvXVJVBA0AEg0SVkdJR1hGQUYJW0UKVBlAB1hME1dEURIDFQldUlQSGxIFChALRUdIRgkXcSMaGUAASUwEWENdX1cVAkcOV0UPEkpHDBZuR1QXR0dVB1VQEEcLGlEUHBZdWE9nBgwKXlJTEgwKC0IXC0YCFxxEVVoMDEVXE2lAXVQbDRpXV1ICAAVeRxg" \
-          -i "logo.png" \
-          -filter_complex "[1:v]scale=iw*0.07:-1[logo];[0:v]eq=brightness=0.03:contrast=1.03:saturation=1.12[video];[video][logo]overlay=30:H-h-30" \
-          -vcodec libx264 \
-          -preset veryfast \
-          -profile:v high \
-          -level 5.0 \
-          -pix_fmt yuv420p \
-          -g 50 \
-          -b:v 4500k \
-          -maxrate 4500k \
-          -bufsize 9000k \
-          -acodec aac \
-          -b:a 128k \
-          -ar 48000 \
-          -map_metadata -1 \
-          -f flv "rtmps://fa723fc1b171.global-contribute.live-video.net/app/sk_us-west-2_LaBpq1zvOoGp_dNaI2aVsrGV4jhzjcuurJAwq7XjtHi"
+          sudo apt-get update -y
+          sudo apt-get install -y wget xz-utils
+          wget -q https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-linux64-gpl.tar.xz
+          tar -xf ffmpeg-master-latest-linux64-gpl.tar.xz
+          sudo mv ffmpeg-master-latest-linux64-gpl/bin/ffmpeg /usr/local/bin/ffmpeg
+          sudo chmod +x /usr/local/bin/ffmpeg
+          ffmpeg -version
+
+      - name: Start Stream
+        run: |
+          ffmpeg \
+            -user_agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" \
+            -fflags +genpts+discardcorrupt+nobuffer \
+            -flags +low_delay \
+            -live_start_index -3 \
+            -seg_duration 3 \
+            -c:v hevc \
+            -i "http://foxtv7.com/newtest/TVD4021/index.mpd" \
+            -map 0:v:0 -map 0:a:1 \
+            -vf "setpts=N/FRAME_RATE/TB" \
+            -c:v libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency \
+            -b:v 4000k -maxrate 4500k -bufsize 9000k \
+            -g 50 -keyint_min 50 -sc_threshold 0 \
+            -af "aresample=48000:async=1000:first_pts=0,asetpts=N/SR/TB" \
+            -c:a aac -b:a 128k -ar 48000 \
+            -ac 2 \
+            -avoid_negative_ts make_zero \
+            -copyts \
+            -start_at_zero \
+            -max_muxing_queue_size 2048 \
+            -reconnect 1 -reconnect_at_eof 1 -reconnect_streamed 1 -reconnect_delay_max 2 \
+            -f flv "rtmp://platform.topuphost.com:8577/live/TESTAYHAM4K"
