@@ -28,7 +28,6 @@ jobs:
             -fflags +genpts+discardcorrupt+nobuffer \
             -flags +low_delay \
             -live_start_index -3 \
-            -seg_duration 3 \
             -c:v hevc \
             -i "http://foxtv7.com/newtest/TVD4021/index.mpd" \
             -map 0:v:0 -map 0:a:1 \
