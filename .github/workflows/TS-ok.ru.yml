@@ -1,4 +1,4 @@
-name: Ok.ru TS Stream - Native TS
+name: Alwan stream - a81
 
 on:
   workflow_dispatch:
@@ -21,10 +21,10 @@ jobs:
       - name: Start Stream
         run: |
           RTMP_URL="rtmp://vsu.okcdn.ru/input/14627505512044_15347102124652_nyms3w6t7u"
-          SOURCE_URL="https://on1tv.site/EGYFILM/index.php?action=stream&url=http%3A%2F%2F135.125.196.66%3A8080%2F78766%2Findex.m3u8%3Ftoken%3Dc2fa41d198df85f95c6f452a8a0f6200e07dea66-bfd609b8075b19c2d086d4a1c63ef2f7-1780800455-1780771655-38.242.235.127%26"
+          SOURCE_URL="http://g.mztk02.cc/ayham/ayham/1339213?token=ShN0YQ0JGlhBVEk9ShAWG04kBi5fWQJEC0E8WgsHJDJHQQQJQQQQQ1JHG0EQQQQQQQ0QQQ0UWwVQAVVQUwxNQ0QQQQQQQQxAWUcQAQQQQQQQRhVGQQQQQUcNUFJQDFFQBQQACEgSQQQQRw1BQQQHQQQQQEYcFAQQQQQQQQQQQQQQQQQQQRICDBYJW09EV1xnBQFUBV5SQw5HBkNJRAQQQRMLXEQIXB.RAAQxDEQdMVxpbRghcBwBDGEdUDhAITRMYEwsQdSESFEAGHUMGCEtbVw9GA0ZERUMYR14SOhRcEhVDVFNcAUIaWEFVFU9EVVNAPgdWCl5TAkAMQQQQRANDQBMdEFQQQQQQAQQQEQQQEAJDQQQQQQQQQ0dK"
 
-          if [ ! -f "logoworld.png" ]; then
-            echo "❌ Logo file not found!"
+          if [ ! -f "alwan.png" ]; then
+            echo "false"
             exit 1
           fi
 
@@ -34,7 +34,7 @@ jobs:
           while [ $FAIL_COUNT -lt $MAX_FAILS ]; do
             echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
             echo "▶ Starting stream | Attempt: $((FAIL_COUNT + 1))"
-            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
             ffmpeg \
               -hide_banner \
@@ -49,7 +49,7 @@ jobs:
               -i "$SOURCE_URL" \
               -i "logoworld.png" \
               -filter_complex \
-                "[1:v]scale=115:-1:flags=lanczos[logo];
+                "[1:v]scale=1920:1080:flags=lanczos[logo];
                  [0:v][logo]overlay=30:main_h-overlay_h-30:format=auto,format=yuv420p,setsar=1" \
               -c:v libx264 \
               -preset veryfast \
@@ -72,18 +72,18 @@ jobs:
             echo "⚠ FFmpeg exited with code: $EXIT_CODE"
 
             if [ $EXIT_CODE -eq 0 ]; then
-              echo "✅ Stream ended cleanly."
+              echo "✅ ended"
               break
             else
               FAIL_COUNT=$((FAIL_COUNT + 1))
               WAIT=$((FAIL_COUNT * 3))
               [ $WAIT -gt 30 ] && WAIT=30
-              echo "🔄 Reconnecting in ${WAIT}s... (Fail $FAIL_COUNT/$MAX_FAILS)"
+              echo "Reconnecting in ${WAIT}s... (Fail $FAIL_COUNT/$MAX_FAILS)"
               sleep $WAIT
             fi
           done
 
           if [ $FAIL_COUNT -ge $MAX_FAILS ]; then
-            echo "❌ Max reconnect attempts reached. Exiting."
+            echo "❌ Exiting."
             exit 1
           fi
