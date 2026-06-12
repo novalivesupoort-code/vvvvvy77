@@ -74,7 +74,7 @@ jobs:
               -level 4.1
               -x264-params "bframes=0:keyint=60:min-keyint=60:scenecut=0:ref=1"
               -pix_fmt yuv420p
-              -r 25
+              -r 50
               -g 60
               -b:v 3200k
               -maxrate 3200k
