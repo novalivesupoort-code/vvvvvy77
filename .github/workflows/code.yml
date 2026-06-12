@@ -1,107 +1,136 @@
-name: Test GET POST Methods
+name: Wor8ld9 Cup Stream
 
 on:
   workflow_dispatch:
     inputs:
-      source_url:
-        description: 'Source URL to test'
+      use_logo:
+        description: 'Use logo overlay?'
         required: true
-        default: 'https://23370wa.xyz/live/mo3ad11a11/mo3ada11a11/532.m3u8'
+        default: 'true'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
 
 jobs:
-  test:
+  stream:
     runs-on: ubuntu-latest
+    timeout-minutes: 350
 
     steps:
-      - name: Install Tools
-        run: |
-          sudo apt-get install -y --no-install-recommends ffmpeg curl -qq
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
-      - name: Test 1 - GET with cookies
+      - name: Install FFmpeg
         run: |
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "🧪 Test 1: GET + Save Cookies"
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          curl -v -X GET \
-            -c /tmp/cookies.txt \
-            -D /tmp/headers.txt \
-            -A "okhttp/4.9.0" \
-            -H "Accept: */*" \
-            -H "Connection: keep-alive" \
-            "${{ github.event.inputs.source_url }}" \
-            -o /tmp/content1.txt 2>&1 | grep -i "< \|> \|location\|cookie\|set-cookie\|http/"
-          echo "📄 Content:"
-          cat /tmp/content1.txt | head -10
-          echo "🍪 Cookies:"
-          cat /tmp/cookies.txt 2>/dev/null || echo "No cookies"
+          sudo apt-get install -y --no-install-recommends ffmpeg
+          ffmpeg -version | head -1
 
-      - name: Test 2 - GET with cookies second request
+      - name: Start Stream
         run: |
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "🧪 Test 2: GET + Send Cookies"
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          curl -v -X GET \
-            -b /tmp/cookies.txt \
-            -c /tmp/cookies.txt \
-            -A "okhttp/4.9.0" \
-            -H "Accept: */*" \
-            -H "Connection: keep-alive" \
-            "${{ github.event.inputs.source_url }}" \
-            -o /tmp/content2.txt 2>&1 | grep -i "< \|location\|cookie\|http/"
-          echo "📄 Content:"
-          cat /tmp/content2.txt | head -10
+          RTMP_URL="rtmp://vsu.okcdn.ru/input/14627505512044_15347102124652_nyms3w6t7u"
+          SOURCE_URL="http://31.42.176.149/live/uzyMKZH8e4B1/2RrFWa1eRdUs/1037747.m3u8?token=734579yuqixjctr"
+          USE_LOGO="${{ github.event.inputs.use_logo }}"
 
-      - name: Test 3 - POST request
-        run: |
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "🧪 Test 3: POST request"
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          curl -v -X POST \
-            -A "okhttp/4.9.0" \
-            -H "Accept: */*" \
-            -H "Connection: keep-alive" \
-            "${{ github.event.inputs.source_url }}" \
-            -o /tmp/content3.txt 2>&1 | grep -i "< \|location\|http/"
-          echo "📄 Content:"
-          cat /tmp/content3.txt | head -10
+          # استخراج Origin و Referer تلقائياً من الرابط
+          PROTO=$(echo "$SOURCE_URL" | grep -oP '^https?')
+          DOMAIN=$(echo "$SOURCE_URL" | grep -oP '^https?://[^/]+')
+          ORIGIN="${DOMAIN}"
+          REFERER="${DOMAIN}/"
 
-      - name: Test 4 - FFmpeg with cookie
-        run: |
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "🧪 Test 4: FFmpeg + Cookie"
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          COOKIE=$(grep -v "^#" /tmp/cookies.txt 2>/dev/null | awk '{print $6"="$7}' | tr '\n' ';' || echo "")
-          echo "🍪 Cookie: $COOKIE"
-          timeout 15 ffmpeg \
-            -v warning \
-            -user_agent "okhttp/4.9.0" \
-            -headers $"Accept: */*\r\nConnection: keep-alive\r\nCookie: ${COOKIE}\r\n" \
-            -i "${{ github.event.inputs.source_url }}" \
-            -t 5 -f null - 2>&1 | tail -10 && echo "✅ FFmpeg OK" || echo "❌ FFmpeg Failed"
+          echo "🌐 Origin: $ORIGIN"
+          echo "🌐 Referer: $REFERER"
 
-      - name: Test 5 - FFmpeg with auth URL direct
-        run: |
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "🧪 Test 5: FFmpeg auth URL"
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          AUTH_URL="http://23370wa.xyz/auth/a4kOb6BviKwFuaZ8STwmFEtcDTlrMlmRFMb0uX3tAhVkibEvUBYKtxRAlZLIEIIQ69eTPEQuXp6aiNNhJ1nW37X3_HHNZY08xzfJHhx470LXZqXN_WRYa0kmiG1qNclma8QGzIoSIEtmoTWbhWYr1d_snSNjelFD_o7JmxC0jnHa5zBxbJjNZ7NbckRFzquYrbmMFlyiXZF7LPzOPzpAs-EUFCBylZIG-0lMhTBejfp0mD-OmefiD0xbv5sZkQUUEhaDzZrp8tqvyMbupNh1mI6bDD-akFjdeJrDRehPyPzlOin1qSt0WnzhgWfhn4wwprEgl9L78zGfR28_0uMYheQY2ZAcuvNVkv7nHpvRKXd5p1IjcabtUWepB3RxnFd0t_KQ7VfqlLdG1i8oEr8HFKqbgwozxZl7yXhrvxjdk9tIZdzyMvLTYWDaAPGOYRIwNa5J-WB-Cz_gYHvZJedZ62cB08tyR5Cy32Mf7SugI0Fz7azHncUYmSYOx5P3JVoe7IvsQ7z022H7jGsWLoGTuy4uA60D_WR4lu9K4nKEjy2O8mn3gwByPpnUVsNyvIG6d5ldQ1zRI-1as9yrCfD2Rzw5zExDZ5olaN9f7M3-DYQoG8VkGayhey6uKC7L1eE1"
-          echo "🔗 Auth URL: $AUTH_URL"
-          timeout 15 ffmpeg \
-            -v warning \
-            -user_agent "okhttp/4.9.0" \
-            -headers $'Accept: */*\r\nConnection: keep-alive\r\n' \
-            -i "$AUTH_URL" \
-            -t 5 -f null - 2>&1 | tail -10 && echo "✅ FFmpeg OK" || echo "❌ FFmpeg Failed"
+          FAIL_COUNT=0
+          MAX_FAILS=10
 
-      - name: Summary
-        run: |
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "📊 Summary"
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          for i in 1 2 3; do
-            if grep -q "EXTM3U" /tmp/content${i}.txt 2>/dev/null; then
-              echo "✅ Test ${i}: M3U8 opened!"
+          while [ $FAIL_COUNT -lt $MAX_FAILS ]; do
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo "▶ Starting stream | Attempt: $((FAIL_COUNT + 1))"
+            echo "🖼 Logo: $USE_LOGO"
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+            COMMON_INPUT_ARGS=(
+              -re
+              -reconnect 1
+              -reconnect_at_eof 1
+              -reconnect_streamed 1
+              -reconnect_delay_max 2
+              -loglevel warning
+              -thread_queue_size 32768
+              -user_agent "Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36"
+              -headers $"Origin: ${ORIGIN}\r\nReferer: ${REFERER}\r\n"
+              -fflags +genpts+discardcorrupt
+              -err_detect ignore_err
+              -rw_timeout 30000000
+              -i "$SOURCE_URL"
+            )
+
+            COMMON_OUTPUT_ARGS=(
+              -c:v libx264
+              -preset superfast
+              -tune zerolatency
+              -profile:v high
+              -level 4.1
+              -x264-params "bframes=0:keyint=60:min-keyint=60:scenecut=0:ref=1"
+              -pix_fmt yuv420p
+              -r 50
+              -g 60
+              -b:v 3200k
+              -maxrate 3200k
+              -bufsize 6400k
+              -c:a aac
+              -b:a 120k
+              -ar 44100
+              -ac 2
+              -f flv
+              "$RTMP_URL"
+            )
+
+            if [ "$USE_LOGO" = "true" ]; then
+              if [ ! -f "alwan.png" ]; then
+                echo "❌ Logo file not found!"
+                exit 1
+              fi
+
+              ffmpeg \
+                "${COMMON_INPUT_ARGS[@]}" \
+                -loop 1 \
+                -i "alwan.png" \
+                -filter_complex \
+                  "[0:v]scale=1920:1080:flags=fast_bilinear[base];
+                   [1:v]scale=1920:1080:flags=fast_bilinear[logo];
+                   [base][logo]overlay=0:0:format=auto[outv]" \
+                -map "[outv]" \
+                -map "0:a?" \
+                "${COMMON_OUTPUT_ARGS[@]}"
+
             else
-              echo "❌ Test ${i}: Failed"
+
+              ffmpeg \
+                "${COMMON_INPUT_ARGS[@]}" \
+                -map 0:v? \
+                -map 0:a? \
+                "${COMMON_OUTPUT_ARGS[@]}"
+
+            fi
+
+            EXIT_CODE=$?
+            echo "⚠ FFmpeg exited with code: $EXIT_CODE"
+
+            if [ $EXIT_CODE -eq 0 ]; then
+              echo "✅ Stream ended cleanly."
+              break
+            else
+              FAIL_COUNT=$((FAIL_COUNT + 1))
+              WAIT=$((FAIL_COUNT * 3))
+              [ $WAIT -gt 30 ] && WAIT=30
+              echo "🔄 Reconnecting in ${WAIT}s... (Fail $FAIL_COUNT/$MAX_FAILS)"
+              sleep $WAIT
             fi
           done
+
+          if [ $FAIL_COUNT -ge $MAX_FAILS ]; then
+            echo "❌ Max reconnect attempts reached. Exiting."
+            exit 1
+          fi
