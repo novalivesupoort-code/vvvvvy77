@@ -2,6 +2,15 @@ name: Wor8ld9 Cup Stream
 
 on:
   workflow_dispatch:
+    inputs:
+      use_logo:
+        description: 'Use logo overlay?'
+        required: true
+        default: 'true'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
 
 jobs:
   stream:
@@ -12,21 +21,19 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Install FFmpeg (Latest)
+      - name: Install FFmpeg (Fast)
         run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y ffmpeg
+          wget -q https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz
+          tar -xf ffmpeg-release-amd64-static.tar.xz
+          sudo mv ffmpeg-*-amd64-static/ffmpeg /usr/local/bin/ffmpeg
+          sudo chmod +x /usr/local/bin/ffmpeg
           ffmpeg -version | head -1
 
       - name: Start Stream
         run: |
           RTMP_URL="rtmp://vsu.okcdn.ru/input/14627505512044_15347102124652_nyms3w6t7u"
-          SOURCE_URL="http://g.quanviro.cc/at/sh/1322607?token=ShN0YQ0JGlhBVEk9ShAWG04kBi5fWQJEC0E8WgsHJDJHQQQJQQQQQ1JHG0EQQQQQQQ0QQQ0UWwVQAVVQUwxNQ0QQQQQQQQxAWUcQAQQQQQQQRhVGQQQQQUcNUFJQDFFQBQQACEgSQQQQRw1BQQQHQQQQQEYcFAQQQQQQQQQQQQQQQQQQQRICDBYJW09EV1xnBQFUBV5SQw5HBkNJRAQQQRMLXEQIXBRAAQxDEQdMVxpbRghcBwBDGEdUDhAITRMYEwsQdSESFEAGHUMGCEtbVw9GA0ZERUMYR14SOhRcEhVDVFNcAUIaWEFVFU9EVVNAPgdWCl5TAkAMQQQQRANDQBMdEFQQQQQQAQQQEQQQEAJDQQQQQQQQQ0dK"
-
-          if [ ! -f "alwan.png" ]; then
-            echo "❌ Logo file not found!"
-            exit 1
-          fi
+          SOURCE_URL="https://23370wa.xyz/live/mo3ad11a11/mo3ada11a11/532.m3u8"
+          USE_LOGO="${{ github.event.inputs.use_logo }}"
 
           FAIL_COUNT=0
           MAX_FAILS=10
@@ -34,47 +41,92 @@ jobs:
           while [ $FAIL_COUNT -lt $MAX_FAILS ]; do
             echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
             echo "▶ Starting stream | Attempt: $((FAIL_COUNT + 1))"
+            echo "🖼 Logo: $USE_LOGO"
             echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-            ffmpeg \
-              -re \
-              -reconnect 1 \
-              -reconnect_at_eof 1 \
-              -reconnect_streamed 1 \
-              -reconnect_delay_max 2 \
-              -loglevel info \
-              -thread_queue_size 32768 \
-              -user_agent "VLC/3.0.20 LibVLC/3.0.20" \
-              -fflags +genpts+discardcorrupt \
-              -err_detect ignore_err \
-              -rw_timeout 30000000 \
-              -i "$SOURCE_URL" \
-              -loop 1 \
-              -i "alwan.png" \
-              -filter_complex \
-                "[0:v]scale=1920:1080:flags=fast_bilinear[base];
-                 [1:v]scale=90:90:flags=fast_bilinear[logo];
-                 [base][logo]overlay=60:H-150[outv]" \
-              -map "[outv]" \
-              -map "0:a?" \
-              -c:v libx264 \
-              -preset superfast \
-              -tune zerolatency \
-              -profile:v high \
-              -level 4.1 \
-              -x264-params "bframes=0:keyint=60:min-keyint=60:scenecut=0:ref=1" \
-              -pix_fmt yuv420p \
-              -r 50 \
-              -g 60 \
-              -b:v 3200k \
-              -maxrate 3200k \
-              -bufsize 6400k \
-              -c:a aac \
-              -b:a 120k \
-              -ar 44100 \
-              -ac 2 \
-              -f flv \
-              "$RTMP_URL"
+            if [ "$USE_LOGO" = "true" ]; then
+              if [ ! -f "alwan.png" ]; then
+                echo "❌ Logo file not found!"
+                exit 1
+              fi
+
+              ffmpeg \
+                -re \
+                -reconnect 1 \
+                -reconnect_at_eof 1 \
+                -reconnect_streamed 1 \
+                -reconnect_delay_max 2 \
+                -loglevel warning \
+                -thread_queue_size 32768 \
+                -user_agent "Televizo/1.0 HLS/1.0" \
+                -headers "Origin: https://23370wa.xyz\r\nReferer: https://23370wa.xyz/\r\n" \
+                -fflags +genpts+discardcorrupt \
+                -err_detect ignore_err \
+                -rw_timeout 30000000 \
+                -i "$SOURCE_URL" \
+                -loop 1 \
+                -i "alwan.png" \
+                -filter_complex \
+                  "[0:v]scale=1920:1080:flags=fast_bilinear[base];
+                   [1:v]scale=1920:1080:flags=fast_bilinear[logo];
+                   [base][logo]overlay=0:0:format=auto[outv]" \
+                -map "[outv]" \
+                -map "0:a?" \
+                -c:v libx264 \
+                -preset superfast \
+                -tune zerolatency \
+                -profile:v high \
+                -level 4.1 \
+                -x264-params "bframes=0:keyint=60:min-keyint=60:scenecut=0:ref=1" \
+                -pix_fmt yuv420p \
+                -r 50 \
+                -g 60 \
+                -b:v 3200k \
+                -maxrate 3200k \
+                -bufsize 6400k \
+                -c:a aac \
+                -b:a 120k \
+                -ar 44100 \
+                -ac 2 \
+                -f flv \
+                "$RTMP_URL"
+
+            else
+
+              ffmpeg \
+                -re \
+                -reconnect 1 \
+                -reconnect_at_eof 1 \
+                -reconnect_streamed 1 \
+                -reconnect_delay_max 2 \
+                -loglevel warning \
+                -thread_queue_size 32768 \
+                -user_agent "Televizo/1.0 HLS/1.0" \
+                -headers "Origin: https://23370wa.xyz\r\nReferer: https://23370wa.xyz/\r\n" \
+                -fflags +genpts+discardcorrupt \
+                -err_detect ignore_err \
+                -rw_timeout 30000000 \
+                -i "$SOURCE_URL" \
+                -c:v libx264 \
+                -preset superfast \
+                -tune zerolatency \
+                -profile:v high \
+                -level 4.1 \
+                -x264-params "bframes=0:keyint=60:min-keyint=60:scenecut=0:ref=1" \
+                -pix_fmt yuv420p \
+                -r 25 \
+                -g 60 \
+                -b:v 3200k \
+                -maxrate 3200k \
+                -bufsize 6400k \
+                -c:a aac \
+                -b:a 120k \
+                -ar 44100 \
+                -ac 2 \
+                -f flv \
+                "$RTMP_URL"
+
+            fi
 
             EXIT_CODE=$?
             echo "⚠ FFmpeg exited with code: $EXIT_CODE"
