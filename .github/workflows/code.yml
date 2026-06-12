@@ -1,136 +1,75 @@
-name: Wor8ld9 Cup Stream
+name: Test Source URL
 
 on:
   workflow_dispatch:
     inputs:
-      use_logo:
-        description: 'Use logo overlay?'
+      source_url:
+        description: 'Source URL to test'
         required: true
-        default: 'true'
-        type: choice
-        options:
-          - 'true'
-          - 'false'
+        default: 'https://23370wa.xyz/live/mo3ad11a11/mo3ada11a11/532.m3u8'
 
 jobs:
-  stream:
+  test:
     runs-on: ubuntu-latest
-    timeout-minutes: 350
 
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Install FFmpeg
+      - name: Test with curl - okhttp
         run: |
-          sudo apt-get install -y --no-install-recommends ffmpeg
-          ffmpeg -version | head -1
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "🧪 Test 1: okhttp"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          curl -s -o /tmp/test1.txt -w "HTTP_CODE:%{http_code}" \
+            -H "Accept: */*" \
+            -H "Accept-Encoding: gzip, deflate, br" \
+            -H "Connection: keep-alive" \
+            -A "okhttp/4.9.0" \
+            "${{ github.event.inputs.source_url }}" && \
+          head -5 /tmp/test1.txt || echo "❌ Failed"
 
-      - name: Start Stream
+      - name: Test with curl - Televizo
         run: |
-          RTMP_URL="rtmp://vsu.okcdn.ru/input/14627505512044_15347102124652_nyms3w6t7u"
-          SOURCE_URL="https://23370wa.xyz/live/mo3ad11a11/mo3ada11a11/532.m3u8"
-          USE_LOGO="${{ github.event.inputs.use_logo }}"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "🧪 Test 2: Televizo"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          curl -s -o /tmp/test2.txt -w "HTTP_CODE:%{http_code}" \
+            -H "Accept: */*" \
+            -H "Accept-Encoding: gzip, deflate, br" \
+            -H "Connection: keep-alive" \
+            -A "Televizo/1.8.9.3 (Linux; Android 9)" \
+            "${{ github.event.inputs.source_url }}" && \
+          head -5 /tmp/test2.txt || echo "❌ Failed"
 
-          # استخراج Origin و Referer تلقائياً من الرابط
-          PROTO=$(echo "$SOURCE_URL" | grep -oP '^https?')
-          DOMAIN=$(echo "$SOURCE_URL" | grep -oP '^https?://[^/]+')
-          ORIGIN="${DOMAIN}"
-          REFERER="${DOMAIN}/"
+      - name: Test with curl - VLC
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "🧪 Test 3: VLC"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          curl -s -o /tmp/test3.txt -w "HTTP_CODE:%{http_code}" \
+            -H "Accept: */*" \
+            -H "Accept-Encoding: gzip, deflate, br" \
+            -H "Connection: keep-alive" \
+            -A "VLC/3.0.20 LibVLC/3.0.20" \
+            "${{ github.event.inputs.source_url }}" && \
+          head -5 /tmp/test3.txt || echo "❌ Failed"
 
-          echo "🌐 Origin: $ORIGIN"
-          echo "🌐 Referer: $REFERER"
+      - name: Test with curl - No Headers
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "🧪 Test 4: No Headers (Plain)"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          curl -s -o /tmp/test4.txt -w "HTTP_CODE:%{http_code}" \
+            "${{ github.event.inputs.source_url }}" && \
+          head -5 /tmp/test4.txt || echo "❌ Failed"
 
-          FAIL_COUNT=0
-          MAX_FAILS=10
-
-          while [ $FAIL_COUNT -lt $MAX_FAILS ]; do
-            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-            echo "▶ Starting stream | Attempt: $((FAIL_COUNT + 1))"
-            echo "🖼 Logo: $USE_LOGO"
-            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-
-            COMMON_INPUT_ARGS=(
-              -re
-              -reconnect 1
-              -reconnect_at_eof 1
-              -reconnect_streamed 1
-              -reconnect_delay_max 2
-              -loglevel warning
-              -thread_queue_size 32768
-              -user_agent "Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36"
-              -headers $"Origin: ${ORIGIN}\r\nReferer: ${REFERER}\r\n"
-              -fflags +genpts+discardcorrupt
-              -err_detect ignore_err
-              -rw_timeout 30000000
-              -i "$SOURCE_URL"
-            )
-
-            COMMON_OUTPUT_ARGS=(
-              -c:v libx264
-              -preset superfast
-              -tune zerolatency
-              -profile:v high
-              -level 4.1
-              -x264-params "bframes=0:keyint=60:min-keyint=60:scenecut=0:ref=1"
-              -pix_fmt yuv420p
-              -r 50
-              -g 60
-              -b:v 3200k
-              -maxrate 3200k
-              -bufsize 6400k
-              -c:a aac
-              -b:a 120k
-              -ar 44100
-              -ac 2
-              -f flv
-              "$RTMP_URL"
-            )
-
-            if [ "$USE_LOGO" = "true" ]; then
-              if [ ! -f "alwan.png" ]; then
-                echo "❌ Logo file not found!"
-                exit 1
-              fi
-
-              ffmpeg \
-                "${COMMON_INPUT_ARGS[@]}" \
-                -loop 1 \
-                -i "alwan.png" \
-                -filter_complex \
-                  "[0:v]scale=1920:1080:flags=fast_bilinear[base];
-                   [1:v]scale=1920:1080:flags=fast_bilinear[logo];
-                   [base][logo]overlay=0:0:format=auto[outv]" \
-                -map "[outv]" \
-                -map "0:a?" \
-                "${COMMON_OUTPUT_ARGS[@]}"
-
+      - name: Summary
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "📊 Results Summary:"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          for i in 1 2 3 4; do
+            if grep -q "EXTM3U" /tmp/test${i}.txt 2>/dev/null; then
+              echo "✅ Test ${i}: SUCCESS - M3U8 opened!"
             else
-
-              ffmpeg \
-                "${COMMON_INPUT_ARGS[@]}" \
-                -map 0:v? \
-                -map 0:a? \
-                "${COMMON_OUTPUT_ARGS[@]}"
-
-            fi
-
-            EXIT_CODE=$?
-            echo "⚠ FFmpeg exited with code: $EXIT_CODE"
-
-            if [ $EXIT_CODE -eq 0 ]; then
-              echo "✅ Stream ended cleanly."
-              break
-            else
-              FAIL_COUNT=$((FAIL_COUNT + 1))
-              WAIT=$((FAIL_COUNT * 3))
-              [ $WAIT -gt 30 ] && WAIT=30
-              echo "🔄 Reconnecting in ${WAIT}s... (Fail $FAIL_COUNT/$MAX_FAILS)"
-              sleep $WAIT
+              echo "❌ Test ${i}: FAILED"
             fi
           done
-
-          if [ $FAIL_COUNT -ge $MAX_FAILS ]; then
-            echo "❌ Max reconnect attempts reached. Exiting."
-            exit 1
-          fi
