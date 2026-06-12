@@ -1,4 +1,4 @@
-name: Test Source URL
+name: Test Source URL - Deep
 
 on:
   workflow_dispatch:
@@ -13,63 +13,83 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Test with curl - okhttp
+      - name: Install Tools
+        run: |
+          sudo apt-get install -y --no-install-recommends ffmpeg curl -qq
+
+      - name: Test 1 - Show Redirect Chain
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "🧪 Test 1: okhttp"
+          echo "🧪 Test 1: Redirect Chain"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          curl -s -o /tmp/test1.txt -w "HTTP_CODE:%{http_code}" \
-            -H "Accept: */*" \
-            -H "Accept-Encoding: gzip, deflate, br" \
-            -H "Connection: keep-alive" \
+          curl -sIL \
             -A "okhttp/4.9.0" \
-            "${{ github.event.inputs.source_url }}" && \
-          head -5 /tmp/test1.txt || echo "❌ Failed"
+            "${{ github.event.inputs.source_url }}" | grep -i "location\|http/\|content-type"
 
-      - name: Test with curl - Televizo
+      - name: Test 2 - Follow Redirect + Print Final URL
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "🧪 Test 2: Televizo"
+          echo "🧪 Test 2: Final URL after redirect"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          curl -s -o /tmp/test2.txt -w "HTTP_CODE:%{http_code}" \
+          FINAL_URL=$(curl -Ls -o /dev/null \
+            -w "%{url_effective}" \
+            -A "okhttp/4.9.0" \
+            "${{ github.event.inputs.source_url }}")
+          echo "🔗 Final URL: $FINAL_URL"
+          echo "FINAL_URL=$FINAL_URL" >> $GITHUB_ENV
+
+      - name: Test 3 - Read Final URL Content
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "🧪 Test 3: Content of Final URL"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          curl -Ls \
+            -A "okhttp/4.9.0" \
             -H "Accept: */*" \
-            -H "Accept-Encoding: gzip, deflate, br" \
             -H "Connection: keep-alive" \
-            -A "Televizo/1.8.9.3 (Linux; Android 9)" \
-            "${{ github.event.inputs.source_url }}" && \
-          head -5 /tmp/test2.txt || echo "❌ Failed"
+            "$FINAL_URL" | head -15
 
-      - name: Test with curl - VLC
+      - name: Test 4 - FFmpeg with Final URL
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "🧪 Test 3: VLC"
+          echo "🧪 Test 4: FFmpeg with Final URL"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          curl -s -o /tmp/test3.txt -w "HTTP_CODE:%{http_code}" \
-            -H "Accept: */*" \
-            -H "Accept-Encoding: gzip, deflate, br" \
-            -H "Connection: keep-alive" \
-            -A "VLC/3.0.20 LibVLC/3.0.20" \
-            "${{ github.event.inputs.source_url }}" && \
-          head -5 /tmp/test3.txt || echo "❌ Failed"
+          timeout 10 ffmpeg \
+            -v warning \
+            -user_agent "okhttp/4.9.0" \
+            -headers $'Accept: */*\r\nConnection: keep-alive\r\n' \
+            -i "$FINAL_URL" \
+            -t 5 -f null - 2>&1 | tail -10 && echo "✅ FFmpeg OK" || echo "❌ FFmpeg Failed"
 
-      - name: Test with curl - No Headers
+      - name: Test 5 - FFmpeg with Original URL + redirect follow
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "🧪 Test 4: No Headers (Plain)"
+          echo "🧪 Test 5: FFmpeg Original URL"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          curl -s -o /tmp/test4.txt -w "HTTP_CODE:%{http_code}" \
-            "${{ github.event.inputs.source_url }}" && \
-          head -5 /tmp/test4.txt || echo "❌ Failed"
+          timeout 10 ffmpeg \
+            -v warning \
+            -user_agent "okhttp/4.9.0" \
+            -headers $'Accept: */*\r\nConnection: keep-alive\r\n' \
+            -reconnect 1 \
+            -reconnect_at_eof 1 \
+            -reconnect_streamed 1 \
+            -i "${{ github.event.inputs.source_url }}" \
+            -t 5 -f null - 2>&1 | tail -10 && echo "✅ FFmpeg OK" || echo "❌ FFmpeg Failed"
+
+      - name: Test 6 - Streamlink
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "🧪 Test 6: Streamlink"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          pip install streamlink -q
+          timeout 15 streamlink \
+            --http-header "User-Agent=okhttp/4.9.0" \
+            --http-header "Accept=*/*" \
+            "${{ github.event.inputs.source_url }}" best \
+            --stdout 2>&1 | head -5 && echo "✅ Streamlink OK" || echo "❌ Streamlink Failed"
 
       - name: Summary
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "📊 Results Summary:"
+          echo "📊 Final URL was: $FINAL_URL"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          for i in 1 2 3 4; do
-            if grep -q "EXTM3U" /tmp/test${i}.txt 2>/dev/null; then
-              echo "✅ Test ${i}: SUCCESS - M3U8 opened!"
-            else
-              echo "❌ Test ${i}: FAILED"
-            fi
-          done
