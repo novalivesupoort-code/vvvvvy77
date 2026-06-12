@@ -1,4 +1,4 @@
-name: Test Source URL - Deep
+name: Test GET POST Methods
 
 on:
   workflow_dispatch:
@@ -17,79 +17,91 @@ jobs:
         run: |
           sudo apt-get install -y --no-install-recommends ffmpeg curl -qq
 
-      - name: Test 1 - Show Redirect Chain
+      - name: Test 1 - GET with cookies
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "🧪 Test 1: Redirect Chain"
+          echo "🧪 Test 1: GET + Save Cookies"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          curl -sIL \
-            -A "okhttp/4.9.0" \
-            "${{ github.event.inputs.source_url }}" | grep -i "location\|http/\|content-type"
-
-      - name: Test 2 - Follow Redirect + Print Final URL
-        run: |
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "🧪 Test 2: Final URL after redirect"
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          FINAL_URL=$(curl -Ls -o /dev/null \
-            -w "%{url_effective}" \
-            -A "okhttp/4.9.0" \
-            "${{ github.event.inputs.source_url }}")
-          echo "🔗 Final URL: $FINAL_URL"
-          echo "FINAL_URL=$FINAL_URL" >> $GITHUB_ENV
-
-      - name: Test 3 - Read Final URL Content
-        run: |
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "🧪 Test 3: Content of Final URL"
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          curl -Ls \
+          curl -v -X GET \
+            -c /tmp/cookies.txt \
+            -D /tmp/headers.txt \
             -A "okhttp/4.9.0" \
             -H "Accept: */*" \
             -H "Connection: keep-alive" \
-            "$FINAL_URL" | head -15
+            "${{ github.event.inputs.source_url }}" \
+            -o /tmp/content1.txt 2>&1 | grep -i "< \|> \|location\|cookie\|set-cookie\|http/"
+          echo "📄 Content:"
+          cat /tmp/content1.txt | head -10
+          echo "🍪 Cookies:"
+          cat /tmp/cookies.txt 2>/dev/null || echo "No cookies"
 
-      - name: Test 4 - FFmpeg with Final URL
+      - name: Test 2 - GET with cookies second request
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "🧪 Test 4: FFmpeg with Final URL"
+          echo "🧪 Test 2: GET + Send Cookies"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          timeout 10 ffmpeg \
-            -v warning \
-            -user_agent "okhttp/4.9.0" \
-            -headers $'Accept: */*\r\nConnection: keep-alive\r\n' \
-            -i "$FINAL_URL" \
-            -t 5 -f null - 2>&1 | tail -10 && echo "✅ FFmpeg OK" || echo "❌ FFmpeg Failed"
+          curl -v -X GET \
+            -b /tmp/cookies.txt \
+            -c /tmp/cookies.txt \
+            -A "okhttp/4.9.0" \
+            -H "Accept: */*" \
+            -H "Connection: keep-alive" \
+            "${{ github.event.inputs.source_url }}" \
+            -o /tmp/content2.txt 2>&1 | grep -i "< \|location\|cookie\|http/"
+          echo "📄 Content:"
+          cat /tmp/content2.txt | head -10
 
-      - name: Test 5 - FFmpeg with Original URL + redirect follow
+      - name: Test 3 - POST request
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "🧪 Test 5: FFmpeg Original URL"
+          echo "🧪 Test 3: POST request"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          timeout 10 ffmpeg \
+          curl -v -X POST \
+            -A "okhttp/4.9.0" \
+            -H "Accept: */*" \
+            -H "Connection: keep-alive" \
+            "${{ github.event.inputs.source_url }}" \
+            -o /tmp/content3.txt 2>&1 | grep -i "< \|location\|http/"
+          echo "📄 Content:"
+          cat /tmp/content3.txt | head -10
+
+      - name: Test 4 - FFmpeg with cookie
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "🧪 Test 4: FFmpeg + Cookie"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          COOKIE=$(grep -v "^#" /tmp/cookies.txt 2>/dev/null | awk '{print $6"="$7}' | tr '\n' ';' || echo "")
+          echo "🍪 Cookie: $COOKIE"
+          timeout 15 ffmpeg \
             -v warning \
             -user_agent "okhttp/4.9.0" \
-            -headers $'Accept: */*\r\nConnection: keep-alive\r\n' \
-            -reconnect 1 \
-            -reconnect_at_eof 1 \
-            -reconnect_streamed 1 \
+            -headers $"Accept: */*\r\nConnection: keep-alive\r\nCookie: ${COOKIE}\r\n" \
             -i "${{ github.event.inputs.source_url }}" \
             -t 5 -f null - 2>&1 | tail -10 && echo "✅ FFmpeg OK" || echo "❌ FFmpeg Failed"
 
-      - name: Test 6 - Streamlink
+      - name: Test 5 - FFmpeg with auth URL direct
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "🧪 Test 6: Streamlink"
+          echo "🧪 Test 5: FFmpeg auth URL"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          pip install streamlink -q
-          timeout 15 streamlink \
-            --http-header "User-Agent=okhttp/4.9.0" \
-            --http-header "Accept=*/*" \
-            "${{ github.event.inputs.source_url }}" best \
-            --stdout 2>&1 | head -5 && echo "✅ Streamlink OK" || echo "❌ Streamlink Failed"
+          AUTH_URL="http://23370wa.xyz/auth/a4kOb6BviKwFuaZ8STwmFEtcDTlrMlmRFMb0uX3tAhVkibEvUBYKtxRAlZLIEIIQ69eTPEQuXp6aiNNhJ1nW37X3_HHNZY08xzfJHhx470LXZqXN_WRYa0kmiG1qNclma8QGzIoSIEtmoTWbhWYr1d_snSNjelFD_o7JmxC0jnHa5zBxbJjNZ7NbckRFzquYrbmMFlyiXZF7LPzOPzpAs-EUFCBylZIG-0lMhTBejfp0mD-OmefiD0xbv5sZkQUUEhaDzZrp8tqvyMbupNh1mI6bDD-akFjdeJrDRehPyPzlOin1qSt0WnzhgWfhn4wwprEgl9L78zGfR28_0uMYheQY2ZAcuvNVkv7nHpvRKXd5p1IjcabtUWepB3RxnFd0t_KQ7VfqlLdG1i8oEr8HFKqbgwozxZl7yXhrvxjdk9tIZdzyMvLTYWDaAPGOYRIwNa5J-WB-Cz_gYHvZJedZ62cB08tyR5Cy32Mf7SugI0Fz7azHncUYmSYOx5P3JVoe7IvsQ7z022H7jGsWLoGTuy4uA60D_WR4lu9K4nKEjy2O8mn3gwByPpnUVsNyvIG6d5ldQ1zRI-1as9yrCfD2Rzw5zExDZ5olaN9f7M3-DYQoG8VkGayhey6uKC7L1eE1"
+          echo "🔗 Auth URL: $AUTH_URL"
+          timeout 15 ffmpeg \
+            -v warning \
+            -user_agent "okhttp/4.9.0" \
+            -headers $'Accept: */*\r\nConnection: keep-alive\r\n' \
+            -i "$AUTH_URL" \
+            -t 5 -f null - 2>&1 | tail -10 && echo "✅ FFmpeg OK" || echo "❌ FFmpeg Failed"
 
       - name: Summary
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "📊 Final URL was: $FINAL_URL"
+          echo "📊 Summary"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          for i in 1 2 3; do
+            if grep -q "EXTM3U" /tmp/content${i}.txt 2>/dev/null; then
+              echo "✅ Test ${i}: M3U8 opened!"
+            else
+              echo "❌ Test ${i}: Failed"
+            fi
+          done
