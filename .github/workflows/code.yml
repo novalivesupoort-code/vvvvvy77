@@ -21,12 +21,9 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Install FFmpeg (Fast)
+      - name: Install FFmpeg
         run: |
-          wget -q https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz
-          tar -xf ffmpeg-release-amd64-static.tar.xz
-          sudo mv ffmpeg-*-amd64-static/ffmpeg /usr/local/bin/ffmpeg
-          sudo chmod +x /usr/local/bin/ffmpeg
+          sudo apt-get install -y --no-install-recommends ffmpeg
           ffmpeg -version | head -1
 
       - name: Start Stream
@@ -34,6 +31,15 @@ jobs:
           RTMP_URL="rtmp://vsu.okcdn.ru/input/14627505512044_15347102124652_nyms3w6t7u"
           SOURCE_URL="https://23370wa.xyz/live/mo3ad11a11/mo3ada11a11/532.m3u8"
           USE_LOGO="${{ github.event.inputs.use_logo }}"
+
+          # استخراج Origin و Referer تلقائياً من الرابط
+          PROTO=$(echo "$SOURCE_URL" | grep -oP '^https?')
+          DOMAIN=$(echo "$SOURCE_URL" | grep -oP '^https?://[^/]+')
+          ORIGIN="${DOMAIN}"
+          REFERER="${DOMAIN}/"
+
+          echo "🌐 Origin: $ORIGIN"
+          echo "🌐 Referer: $REFERER"
 
           FAIL_COUNT=0
           MAX_FAILS=10
@@ -44,6 +50,43 @@ jobs:
             echo "🖼 Logo: $USE_LOGO"
             echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
+            COMMON_INPUT_ARGS=(
+              -re
+              -reconnect 1
+              -reconnect_at_eof 1
+              -reconnect_streamed 1
+              -reconnect_delay_max 2
+              -loglevel warning
+              -thread_queue_size 32768
+              -user_agent "Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36"
+              -headers $"Origin: ${ORIGIN}\r\nReferer: ${REFERER}\r\n"
+              -fflags +genpts+discardcorrupt
+              -err_detect ignore_err
+              -rw_timeout 30000000
+              -i "$SOURCE_URL"
+            )
+
+            COMMON_OUTPUT_ARGS=(
+              -c:v libx264
+              -preset superfast
+              -tune zerolatency
+              -profile:v high
+              -level 4.1
+              -x264-params "bframes=0:keyint=60:min-keyint=60:scenecut=0:ref=1"
+              -pix_fmt yuv420p
+              -r 25
+              -g 60
+              -b:v 3200k
+              -maxrate 3200k
+              -bufsize 6400k
+              -c:a aac
+              -b:a 120k
+              -ar 44100
+              -ac 2
+              -f flv
+              "$RTMP_URL"
+            )
+
             if [ "$USE_LOGO" = "true" ]; then
               if [ ! -f "alwan.png" ]; then
                 echo "❌ Logo file not found!"
@@ -51,19 +94,7 @@ jobs:
               fi
 
               ffmpeg \
-                -re \
-                -reconnect 1 \
-                -reconnect_at_eof 1 \
-                -reconnect_streamed 1 \
-                -reconnect_delay_max 2 \
-                -loglevel warning \
-                -thread_queue_size 32768 \
-                -user_agent "Televizo/1.0 HLS/1.0" \
-                -headers "Origin: https://23370wa.xyz\r\nReferer: https://23370wa.xyz/\r\n" \
-                -fflags +genpts+discardcorrupt \
-                -err_detect ignore_err \
-                -rw_timeout 30000000 \
-                -i "$SOURCE_URL" \
+                "${COMMON_INPUT_ARGS[@]}" \
                 -loop 1 \
                 -i "alwan.png" \
                 -filter_complex \
@@ -72,59 +103,15 @@ jobs:
                    [base][logo]overlay=0:0:format=auto[outv]" \
                 -map "[outv]" \
                 -map "0:a?" \
-                -c:v libx264 \
-                -preset superfast \
-                -tune zerolatency \
-                -profile:v high \
-                -level 4.1 \
-                -x264-params "bframes=0:keyint=60:min-keyint=60:scenecut=0:ref=1" \
-                -pix_fmt yuv420p \
-                -r 50 \
-                -g 60 \
-                -b:v 3200k \
-                -maxrate 3200k \
-                -bufsize 6400k \
-                -c:a aac \
-                -b:a 120k \
-                -ar 44100 \
-                -ac 2 \
-                -f flv \
-                "$RTMP_URL"
+                "${COMMON_OUTPUT_ARGS[@]}"
 
             else
 
               ffmpeg \
-                -re \
-                -reconnect 1 \
-                -reconnect_at_eof 1 \
-                -reconnect_streamed 1 \
-                -reconnect_delay_max 2 \
-                -loglevel warning \
-                -thread_queue_size 32768 \
-                -user_agent "Televizo/1.0 HLS/1.0" \
-                -headers "Origin: https://23370wa.xyz\r\nReferer: https://23370wa.xyz/\r\n" \
-                -fflags +genpts+discardcorrupt \
-                -err_detect ignore_err \
-                -rw_timeout 30000000 \
-                -i "$SOURCE_URL" \
-                -c:v libx264 \
-                -preset superfast \
-                -tune zerolatency \
-                -profile:v high \
-                -level 4.1 \
-                -x264-params "bframes=0:keyint=60:min-keyint=60:scenecut=0:ref=1" \
-                -pix_fmt yuv420p \
-                -r 25 \
-                -g 60 \
-                -b:v 3200k \
-                -maxrate 3200k \
-                -bufsize 6400k \
-                -c:a aac \
-                -b:a 120k \
-                -ar 44100 \
-                -ac 2 \
-                -f flv \
-                "$RTMP_URL"
+                "${COMMON_INPUT_ARGS[@]}" \
+                -map 0:v? \
+                -map 0:a? \
+                "${COMMON_OUTPUT_ARGS[@]}"
 
             fi
 
