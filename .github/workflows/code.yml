@@ -29,7 +29,7 @@ jobs:
       - name: Start Stream
         run: |
           RTMP_URL="rtmp://vsu.okcdn.ru/input/14627505512044_15347102124652_nyms3w6t7u"
-          SOURCE_URL="http://g.datovrix.cc/at/sh/914473?token=ShN0YQ0JGlhBVEk9ShAWG04kBi5fWQJEC0E8WgsHJDJHQQQJQQQQQ1JHG0EQQQQQQQ0QQQ0UWwVQAVVQUwxNQ0QQQQQQQQxAWUcQAQQQQQQQRhVGQQQQQUcNUFJQDFFQBQQACEgSQQQQRw1BQQQHQQQQQEYcFAQQQQQQQQQQQQQQQQQQQRICDBYJW09EV1xnBQFUBV5SQw5HBkNJRAQQQRMLXEQIXBRAAQxDEQdMVxpbRghcBwBDGEdUDhAITRMYEwsQdSESFEAGHUMGCEtbVw9GA0ZERUMYR14SOhRcEhVDVFNcAUIaWEFVFU9EVVNAPgdWCl5TAkAMQQQQRANDQBMdEFQQQQQQAQQQEQQQEAJDQQQQQQQQQ0dK"
+          SOURCE_URL="http://62.210.94.42:8080/Hfhgffr/ud9BjPAe0hgkp3/328500?token=ayfUHH.fbddd.y.Hycbac.ydzdfXyzcy.X.y.IR.ts.83ba0b866e5c7b6b5a496b00ac221ea9a449e462d892b81143132776e2dc7fa9"
           USE_LOGO="${{ github.event.inputs.use_logo }}"
 
           # استخراج Origin و Referer تلقائياً من الرابط
@@ -76,11 +76,11 @@ jobs:
               -pix_fmt yuv420p
               -r 50
               -g 60
-              -b:v 3200k
-              -maxrate 3200k
-              -bufsize 6400k
+              -b:v 4200k
+              -maxrate 4200k
+              -bufsize 8400k
               -c:a aac
-              -b:a 120k
+              -b:a 128k
               -ar 44100
               -ac 2
               -f flv
@@ -88,7 +88,7 @@ jobs:
             )
 
             if [ "$USE_LOGO" = "true" ]; then
-              if [ ! -f "bein.png" ]; then
+              if [ ! -f "nm.png" ]; then
                 echo "❌ Logo file not found!"
                 exit 1
               fi
@@ -96,7 +96,7 @@ jobs:
               ffmpeg \
                 "${COMMON_INPUT_ARGS[@]}" \
                 -loop 1 \
-                -i "bein.png" \
+                -i "nm.png" \
                 -filter_complex \
                   "[0:v]scale=1920:1080:flags=fast_bilinear[base];
                    [1:v]scale=1920:1080:flags=fast_bilinear[logo];
