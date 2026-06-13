@@ -29,7 +29,7 @@ jobs:
       - name: Start Stream
         run: |
           RTMP_URL="rtmp://vsu.okcdn.ru/input/14627505512044_15347102124652_nyms3w6t7u"
-          SOURCE_URL="http://31.42.176.149/live/uzyMKZH8e4B1/2RrFWa1eRdUs/1037747.m3u8?token=734579yuqixjctr"
+          SOURCE_URL="http://g.datovrix.cc/at/sh/914473?token=ShN0YQ0JGlhBVEk9ShAWG04kBi5fWQJEC0E8WgsHJDJHQQQJQQQQQ1JHG0EQQQQQQQ0QQQ0UWwVQAVVQUwxNQ0QQQQQQQQxAWUcQAQQQQQQQRhVGQQQQQUcNUFJQDFFQBQQACEgSQQQQRw1BQQQHQQQQQEYcFAQQQQQQQQQQQQQQQQQQQRICDBYJW09EV1xnBQFUBV5SQw5HBkNJRAQQQRMLXEQIXBRAAQxDEQdMVxpbRghcBwBDGEdUDhAITRMYEwsQdSESFEAGHUMGCEtbVw9GA0ZERUMYR14SOhRcEhVDVFNcAUIaWEFVFU9EVVNAPgdWCl5TAkAMQQQQRANDQBMdEFQQQQQQAQQQEQQQEAJDQQQQQQQQQ0dK"
           USE_LOGO="${{ github.event.inputs.use_logo }}"
 
           # استخراج Origin و Referer تلقائياً من الرابط
@@ -88,7 +88,7 @@ jobs:
             )
 
             if [ "$USE_LOGO" = "true" ]; then
-              if [ ! -f "alwan.png" ]; then
+              if [ ! -f "bein.png" ]; then
                 echo "❌ Logo file not found!"
                 exit 1
               fi
@@ -96,7 +96,7 @@ jobs:
               ffmpeg \
                 "${COMMON_INPUT_ARGS[@]}" \
                 -loop 1 \
-                -i "alwan.png" \
+                -i "bein.png" \
                 -filter_complex \
                   "[0:v]scale=1920:1080:flags=fast_bilinear[base];
                    [1:v]scale=1920:1080:flags=fast_bilinear[logo];
