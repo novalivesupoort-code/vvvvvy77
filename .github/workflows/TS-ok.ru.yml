@@ -28,16 +28,21 @@ jobs:
             exit 1
           fi
 
-          # فتح pipe - FFmpeg واحد يستقبل كل الـ segments
-          mkfifo /tmp/stream_pipe
+          PIPE=/tmp/stream_pipe
+          rm -f "$PIPE"
+          mkfifo "$PIPE"
 
-          # تشغيل FFmpeg في الخلفية يقرأ من الـ pipe
+          # FFmpeg يقرأ من الـ pipe - بدون -re وبـ queue كبير
           ffmpeg \
             -hide_banner \
             -loglevel warning \
             -nostdin \
-            -re \
-            -i /tmp/stream_pipe \
+            -thread_queue_size 512 \
+            -analyzeduration 0 \
+            -probesize 32 \
+            -f mpegts \
+            -i "$PIPE" \
+            -thread_queue_size 512 \
             -i "logoworld.png" \
             -filter_complex \
               "[1:v]scale=115:-1:flags=lanczos[logo];
@@ -64,13 +69,6 @@ jobs:
 
           LAST_SEQ=0
 
-          # دالة لضخ segment للـ pipe
-          push_segment() {
-            local URL=$1
-            echo "📡 Pushing: $URL"
-            curl -s --max-time 30 "$URL" > /tmp/stream_pipe
-          }
-
           while kill -0 $FFMPEG_PID 2>/dev/null; do
 
             PLAYLIST=$(curl -s --max-time 10 "$M3U8_URL" 2>/dev/null)
@@ -83,31 +81,29 @@ jobs:
 
             mapfile -t TS_URLS < <(echo "$PLAYLIST" | grep -o 'http[^[:space:]]*\.ts' | tr -d '\r')
 
-            if [ ${#TS_URLS[@]} -eq 0 ]; then
-              sleep 3
-              continue
-            fi
-
             PUSHED=0
             for TS_URL in "${TS_URLS[@]}"; do
               TS_URL=$(printf '%s' "$TS_URL" | tr -d '\r\n\t ')
               if [[ "$TS_URL" != http* ]]; then continue; fi
 
               SEG_NUM=$(echo "$TS_URL" | grep -o '[0-9]*\.ts$' | grep -o '^[0-9]*')
-              if [ -z "$SEG_NUM" ]; then continue; fi
-              if [ "$SEG_NUM" -le "$LAST_SEQ" ] 2>/dev/null; then continue; fi
+              if [ -z "$SEG_NUM" ] || [ "$SEG_NUM" -le "$LAST_SEQ" ] 2>/dev/null; then continue; fi
 
               LAST_SEQ=$SEG_NUM
-              push_segment "$TS_URL"
+              echo "📡 Pushing segment $SEG_NUM"
+
+              # ضخ مباشر للـ pipe بدون توقف
+              curl -s --max-time 20 "$TS_URL" >> "$PIPE"
+
               PUSHED=$((PUSHED + 1))
             done
 
             if [ $PUSHED -eq 0 ]; then
-              sleep 2
+              sleep 1
             fi
 
           done
 
           echo "❌ FFmpeg process ended."
-          rm -f /tmp/stream_pipe
+          rm -f "$PIPE"
           exit 1
