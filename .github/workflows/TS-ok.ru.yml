@@ -28,16 +28,16 @@ jobs:
             exit 1
           fi
 
+          LAST_SEQ=0
           FAIL_COUNT=0
           MAX_FAILS=10
-          LAST_SEQ=0
 
           while [ $FAIL_COUNT -lt $MAX_FAILS ]; do
             echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-            echo "▶ Fetching playlist | Attempt: $((FAIL_COUNT + 1))"
+            echo "▶ Fetching playlist"
             echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-            PLAYLIST=$(curl -s --max-time 10 "$M3U8_URL")
+            PLAYLIST=$(curl -s --max-time 10 "$M3U8_URL" 2>/dev/null)
 
             if [ -z "$PLAYLIST" ]; then
               echo "❌ Failed to fetch playlist"
@@ -46,22 +46,22 @@ jobs:
               continue
             fi
 
-            SEQ=$(echo "$PLAYLIST" | grep "EXT-X-MEDIA-SEQUENCE" | grep -o '[0-9]*')
-            echo "📋 Sequence: $SEQ"
+            # استخراج URLs بشكل نظيف
+            mapfile -t TS_URLS < <(echo "$PLAYLIST" | grep -o 'http[^[:space:]<>"]*\.ts' | tr -d '\r')
 
-            # استخراج وتنظيف الـ URLs بشكل صحيح
-            while IFS= read -r TS_URL; do
-              # إزالة \r وأي whitespace
-              TS_URL=$(echo "$TS_URL" | tr -d '\r\n ')
+            if [ ${#TS_URLS[@]} -eq 0 ]; then
+              echo "⚠ No TS URLs found"
+              sleep 3
+              continue
+            fi
 
-              # تأكد أن الرابط يبدأ بـ http
-              if [[ "$TS_URL" != http* ]]; then
-                continue
-              fi
+            for TS_URL in "${TS_URLS[@]}"; do
+              # تنظيف إضافي
+              TS_URL=$(printf '%s' "$TS_URL" | tr -d '\r\n\t ')
 
-              # استخرج رقم الـ segment
-              SEG_NUM=$(echo "$TS_URL" | grep -o '[0-9]*\.ts' | grep -o '[0-9]*')
+              if [[ "$TS_URL" != http* ]]; then continue; fi
 
+              SEG_NUM=$(echo "$TS_URL" | grep -o '[0-9]*\.ts$' | grep -o '^[0-9]*')
               if [ -z "$SEG_NUM" ]; then continue; fi
 
               if [ "$SEG_NUM" -le "$LAST_SEQ" ] 2>/dev/null; then
@@ -70,14 +70,15 @@ jobs:
               fi
 
               LAST_SEQ=$SEG_NUM
-              echo "📡 Streaming segment $SEG_NUM"
-              echo "🔗 URL: $TS_URL"
+              echo "📡 Segment $SEG_NUM → $TS_URL"
 
+              # -nostdin يمنع Parse error
+              # -y لتجاوز أي تأكيد
               ffmpeg \
                 -hide_banner \
                 -loglevel error \
-                -reconnect 1 \
-                -reconnect_delay_max 5 \
+                -nostdin \
+                -y \
                 -i "$TS_URL" \
                 -i "logoworld.png" \
                 -filter_complex \
@@ -98,23 +99,21 @@ jobs:
                 -ar 44100 \
                 -ac 2 \
                 -f flv \
-                "$RTMP_URL"
+                "$RTMP_URL" </dev/null
 
               EXIT_CODE=$?
               if [ $EXIT_CODE -ne 0 ]; then
-                echo "⚠ Segment $SEG_NUM failed: exit $EXIT_CODE"
+                echo "⚠ Segment $SEG_NUM failed (exit $EXIT_CODE)"
                 FAIL_COUNT=$((FAIL_COUNT + 1))
               else
                 FAIL_COUNT=0
               fi
 
-            done < <(echo "$PLAYLIST" | grep -o 'http[^[:space:]]*\.ts')
+            done
 
-            sleep 3
+            sleep 2
 
           done
 
-          if [ $FAIL_COUNT -ge $MAX_FAILS ]; then
-            echo "❌ Max reconnect attempts reached."
-            exit 1
-          fi
+          echo "❌ Max reconnect attempts reached."
+          exit 1
