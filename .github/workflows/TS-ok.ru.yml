@@ -32,43 +32,11 @@ jobs:
           MAX_FAILS=10
           LAST_SEQ=0
 
-          stream_segment() {
-            local TS_URL=$1
-            echo "📡 Streaming: $TS_URL"
-            ffmpeg \
-              -hide_banner \
-              -loglevel error \
-              -reconnect 1 \
-              -reconnect_delay_max 5 \
-              -i "$TS_URL" \
-              -i "logoworld.png" \
-              -filter_complex \
-                "[1:v]scale=115:-1:flags=lanczos[logo];
-                 [0:v][logo]overlay=30:main_h-overlay_h-30:format=auto,format=yuv420p,setsar=1" \
-              -c:v libx264 \
-              -preset veryfast \
-              -tune zerolatency \
-              -profile:v high \
-              -crf 20 \
-              -b:v 4500k \
-              -maxrate 5000k \
-              -bufsize 9000k \
-              -g 50 \
-              -keyint_min 25 \
-              -c:a aac \
-              -b:a 128k \
-              -ar 44100 \
-              -ac 2 \
-              -f flv \
-              "$RTMP_URL"
-          }
-
           while [ $FAIL_COUNT -lt $MAX_FAILS ]; do
             echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
             echo "▶ Fetching playlist | Attempt: $((FAIL_COUNT + 1))"
             echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-            # جلب البلايلست
             PLAYLIST=$(curl -s --max-time 10 "$M3U8_URL")
 
             if [ -z "$PLAYLIST" ]; then
@@ -78,39 +46,71 @@ jobs:
               continue
             fi
 
-            # استخراج رقم التسلسل
             SEQ=$(echo "$PLAYLIST" | grep "EXT-X-MEDIA-SEQUENCE" | grep -o '[0-9]*')
             echo "📋 Sequence: $SEQ"
 
-            # استخراج روابط TS
-            TS_URLS=$(echo "$PLAYLIST" | grep "\.ts")
-
+            # استخراج وتنظيف الـ URLs بشكل صحيح
             while IFS= read -r TS_URL; do
-              if [ -z "$TS_URL" ]; then continue; fi
+              # إزالة \r وأي whitespace
+              TS_URL=$(echo "$TS_URL" | tr -d '\r\n ')
 
-              # استخراج رقم الـ segment
+              # تأكد أن الرابط يبدأ بـ http
+              if [[ "$TS_URL" != http* ]]; then
+                continue
+              fi
+
+              # استخرج رقم الـ segment
               SEG_NUM=$(echo "$TS_URL" | grep -o '[0-9]*\.ts' | grep -o '[0-9]*')
 
-              # تخطي القديمة
+              if [ -z "$SEG_NUM" ]; then continue; fi
+
               if [ "$SEG_NUM" -le "$LAST_SEQ" ] 2>/dev/null; then
-                echo "⏭ Skip segment $SEG_NUM"
+                echo "⏭ Skip $SEG_NUM"
                 continue
               fi
 
               LAST_SEQ=$SEG_NUM
-              stream_segment "$TS_URL"
-              EXIT_CODE=$?
+              echo "📡 Streaming segment $SEG_NUM"
+              echo "🔗 URL: $TS_URL"
 
+              ffmpeg \
+                -hide_banner \
+                -loglevel error \
+                -reconnect 1 \
+                -reconnect_delay_max 5 \
+                -i "$TS_URL" \
+                -i "logoworld.png" \
+                -filter_complex \
+                  "[1:v]scale=115:-1:flags=lanczos[logo];
+                   [0:v][logo]overlay=30:main_h-overlay_h-30:format=auto,format=yuv420p,setsar=1" \
+                -c:v libx264 \
+                -preset veryfast \
+                -tune zerolatency \
+                -profile:v high \
+                -crf 20 \
+                -b:v 4500k \
+                -maxrate 5000k \
+                -bufsize 9000k \
+                -g 50 \
+                -keyint_min 25 \
+                -c:a aac \
+                -b:a 128k \
+                -ar 44100 \
+                -ac 2 \
+                -f flv \
+                "$RTMP_URL"
+
+              EXIT_CODE=$?
               if [ $EXIT_CODE -ne 0 ]; then
-                echo "⚠ Segment failed: $EXIT_CODE"
+                echo "⚠ Segment $SEG_NUM failed: exit $EXIT_CODE"
                 FAIL_COUNT=$((FAIL_COUNT + 1))
               else
                 FAIL_COUNT=0
               fi
 
-            done <<< "$TS_URLS"
+            done < <(echo "$PLAYLIST" | grep -o 'http[^[:space:]]*\.ts')
 
-            sleep 2
+            sleep 3
 
           done
 
