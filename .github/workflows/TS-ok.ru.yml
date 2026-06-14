@@ -1,4 +1,4 @@
-name: Ok.ru TS Stream - Stable
+name: Ok.ru TS Stream - 5H Stable
 
 on:
   workflow_dispatch:
@@ -28,20 +28,101 @@ jobs:
             exit 1
           fi
 
-          PIPE=/tmp/stream_pipe
-          rm -f "$PIPE"
-          mkfifo "$PIPE"
+          LAST_SEQ=0
+          SEGMENT_DIR=/tmp/segments
+          mkdir -p "$SEGMENT_DIR"
 
-          # FFmpeg يقرأ من الـ pipe - بدون -re وبـ queue كبير
+          # ──────────────────────────────────────────
+          # Producer: يحمّل segments باستمرار
+          # ──────────────────────────────────────────
+          producer() {
+            while true; do
+              PLAYLIST=$(curl -s --max-time 10 "$M3U8_URL" 2>/dev/null)
+              if [ -z "$PLAYLIST" ]; then
+                sleep 2
+                continue
+              fi
+
+              mapfile -t TS_URLS < <(echo "$PLAYLIST" | grep -o 'http[^[:space:]]*\.ts' | tr -d '\r')
+
+              for TS_URL in "${TS_URLS[@]}"; do
+                TS_URL=$(printf '%s' "$TS_URL" | tr -d '\r\n\t ')
+                [[ "$TS_URL" != http* ]] && continue
+
+                SEG_NUM=$(echo "$TS_URL" | grep -o '[0-9]*\.ts$' | grep -o '^[0-9]*')
+                [ -z "$SEG_NUM" ] && continue
+                [ "$SEG_NUM" -le "$LAST_SEQ" ] 2>/dev/null && continue
+
+                LAST_SEQ=$SEG_NUM
+                OUT="$SEGMENT_DIR/${SEG_NUM}.ts"
+
+                echo "⬇ Download segment $SEG_NUM"
+                curl -s --max-time 20 -o "$OUT" "$TS_URL"
+
+                # إشارة للـ consumer
+                echo "$OUT" >> /tmp/segment_queue.txt
+              done
+
+              sleep 1
+            done
+          }
+
+          # ──────────────────────────────────────────
+          # Consumer: يبث segments لـ FFmpeg مستمر
+          # ──────────────────────────────────────────
+          consumer() {
+            # انتظر أول segment
+            while [ ! -s /tmp/segment_queue.txt ]; do
+              sleep 1
+            done
+
+            PROCESSED=0
+
+            while true; do
+              # اقرأ سطر واحد من القائمة
+              SEG_FILE=$(sed -n "$((PROCESSED + 1))p" /tmp/segment_queue.txt)
+
+              if [ -z "$SEG_FILE" ]; then
+                sleep 0.5
+                continue
+              fi
+
+              # انتظر حتى يكتمل تحميل الملف
+              RETRIES=0
+              while [ ! -s "$SEG_FILE" ] && [ $RETRIES -lt 20 ]; do
+                sleep 0.5
+                RETRIES=$((RETRIES + 1))
+              done
+
+              if [ ! -s "$SEG_FILE" ]; then
+                echo "⚠ Segment missing: $SEG_FILE"
+                PROCESSED=$((PROCESSED + 1))
+                continue
+              fi
+
+              echo "📡 Streaming: $SEG_FILE"
+              cat "$SEG_FILE" >> /tmp/main_pipe
+              rm -f "$SEG_FILE"
+
+              PROCESSED=$((PROCESSED + 1))
+            done
+          }
+
+          # ──────────────────────────────────────────
+          # إعداد الـ pipe الرئيسي
+          # ──────────────────────────────────────────
+          rm -f /tmp/main_pipe /tmp/segment_queue.txt
+          mkfifo /tmp/main_pipe
+
+          # تشغيل FFmpeg
           ffmpeg \
             -hide_banner \
             -loglevel warning \
-            -nostdin \
-            -thread_queue_size 512 \
+            -thread_queue_size 1024 \
             -analyzeduration 0 \
             -probesize 32 \
             -f mpegts \
-            -i "$PIPE" \
+            -i /tmp/main_pipe \
             -thread_queue_size 512 \
             -i "logoworld.png" \
             -filter_complex \
@@ -67,43 +148,24 @@ jobs:
           FFMPEG_PID=$!
           echo "🎬 FFmpeg PID: $FFMPEG_PID"
 
-          LAST_SEQ=0
+          # تشغيل producer و consumer بالتوازي
+          producer &
+          PRODUCER_PID=$!
 
-          while kill -0 $FFMPEG_PID 2>/dev/null; do
+          consumer &
+          CONSUMER_PID=$!
 
-            PLAYLIST=$(curl -s --max-time 10 "$M3U8_URL" 2>/dev/null)
+          echo "🚀 Stream started!"
+          echo "⏱ Producer PID: $PRODUCER_PID | Consumer PID: $CONSUMER_PID"
 
-            if [ -z "$PLAYLIST" ]; then
-              echo "⚠ Empty playlist, retrying..."
-              sleep 3
-              continue
+          # مراقبة FFmpeg - إذا مات أعد كل شيء
+          while true; do
+            if ! kill -0 $FFMPEG_PID 2>/dev/null; then
+              echo "💀 FFmpeg died! Restarting..."
+              kill $PRODUCER_PID $CONSUMER_PID 2>/dev/null
+              rm -f /tmp/main_pipe /tmp/segment_queue.txt
+              rm -f "$SEGMENT_DIR"/*.ts
+              exit 1
             fi
-
-            mapfile -t TS_URLS < <(echo "$PLAYLIST" | grep -o 'http[^[:space:]]*\.ts' | tr -d '\r')
-
-            PUSHED=0
-            for TS_URL in "${TS_URLS[@]}"; do
-              TS_URL=$(printf '%s' "$TS_URL" | tr -d '\r\n\t ')
-              if [[ "$TS_URL" != http* ]]; then continue; fi
-
-              SEG_NUM=$(echo "$TS_URL" | grep -o '[0-9]*\.ts$' | grep -o '^[0-9]*')
-              if [ -z "$SEG_NUM" ] || [ "$SEG_NUM" -le "$LAST_SEQ" ] 2>/dev/null; then continue; fi
-
-              LAST_SEQ=$SEG_NUM
-              echo "📡 Pushing segment $SEG_NUM"
-
-              # ضخ مباشر للـ pipe بدون توقف
-              curl -s --max-time 20 "$TS_URL" >> "$PIPE"
-
-              PUSHED=$((PUSHED + 1))
-            done
-
-            if [ $PUSHED -eq 0 ]; then
-              sleep 1
-            fi
-
+            sleep 5
           done
-
-          echo "❌ FFmpeg process ended."
-          rm -f "$PIPE"
-          exit 1
