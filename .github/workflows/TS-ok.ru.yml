@@ -21,7 +21,9 @@ jobs:
       - name: Start Stream
         run: |
           RTMP_URL="rtmp://vsu.okcdn.ru/input/14627505512044_15347102124652_nyms3w6t7u"
-          SOURCE_URL="http://off28.lynxcontents.click:2086/live/171348492752/5S6HGsea3j/254746.m3u8?data=ixVd16Dy31bufAE7xi0trlZf-D3RV-4rJfyGGIQQA7M5fK_L8c97e4K6rDkXy_UamF3AZ0ezGAqmT6jVBnYskDPHdGw4W9AlDudpS8MKl0QneEDVUSl6hQ6Zg3ri6u9ppg3suI5o4tSV9Z5PhcRLfQ%3D%3D&expires=1781485860"
+          
+          # استخدام البروكسي لتصحيح MIME type
+          SOURCE_URL="http://194.60.93.157/proxy?url=http://off28.lynxcontents.click:2086/live/171348492752/5S6HGsea3j/254746.m3u8?data=ixVd16Dy31bufAE7xi0trlZf-D3RV-4rJfyGGIQQA7M5fK_L8c97e4K6rDkXy_UamF3AZ0ezGAqmT6jVBnYskDPHdGw4W9AlDudpS8MKl0QneEDVUSl6hQ6Zg3ri6u9ppg3suI5o4tSV9Z5PhcRLfQ"
 
           if [ ! -f "logoworld.png" ]; then
             echo "❌ Logo file not found!"
