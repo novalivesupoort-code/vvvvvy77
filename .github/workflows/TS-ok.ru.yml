@@ -21,7 +21,7 @@ jobs:
       - name: Start Stream
         run: |
           RTMP_URL="rtmp://44.230.157.194:1935/app/6a26e02a746ebc0f11ca5ffd"
-          SOURCE_URL="http://on1tv.site/EGYFILM/index.php?action=stream&url=http%3A%2F%2F135.125.196.66%3A8080%2Fbn_max_1_h265_4k%2Ftracks-v1%2Fmono.m3u8%3Ftoken%3De9f15add96abd191c5b3229c9d0b43e763d4745e-af64cc693ee3129854b81ba46003a183-1780961185-1780932385-38.242.235.127"
+          SOURCE_URL="http://off28.lynxcontents.click:2086/live/171348492752/5S6HGsea3j/254746.m3u8?data=ixVd16Dy31bufAE7xi0trlZf-D3RV-4rJfyGGIQQA7M5fK_L8c97e4K6rDkXy_UamF3AZ0ezGAqmT6jVBnYskDPHdGw4W9AlDudpS8MKl0QneEDVUSl6hQ6Zg3ri6u9ppg3suI5o4tSV9Z5PhcRLfQ%3D%3D&expires=1781485860"
 
           if [ ! -f "logoworld.png" ]; then
             echo "❌ Logo file not found!"
