@@ -2,6 +2,11 @@ name: Ok.ru TS Stream - Final Stable
 
 on:
   workflow_dispatch:
+    inputs:
+      m3u8_url:
+        description: 'رابط البث M3U8'
+        required: true
+        type: string
 
 jobs:
   stream:
@@ -23,7 +28,7 @@ jobs:
       - name: Start Stream
         run: |
           RTMP_URL="rtmp://vsu.okcdn.ru/input/14627505512044_15347102124652_nyms3w6t7u"
-          M3U8_URL="http://off28.lynxcontents.click:2086/live/171348492752/5S6HGsea3j/254746.m3u8?data=ixVd16Dy31bufAE7xi0trlZf-D3RV-4rJfyGGIQQA7M5fK_L8c97e4K6rDkXy_UamF3AZ0ezGAqmT6jVBnYskDPHdGw4W9AlDudpS8MKl0QneEDVUSl6hQ6Zg3ri6u9ppg3suI5o4tSV9Z5PhcRLfQ%3D%3D&expires=1781485860"
+          M3U8_URL="${{ github.event.inputs.m3u8_url }}"
 
           if [ ! -f "logoworld.png" ]; then
             echo "❌ Logo file not found!"
@@ -38,7 +43,6 @@ jobs:
             echo "▶ Starting stream | Attempt: $((FAIL_COUNT + 1))"
             echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-            # streamlink يقرأ HLS ويضخه لـ ffmpeg مباشرة
             streamlink \
               --stdout \
               --loglevel warning \
@@ -52,7 +56,7 @@ jobs:
               -hide_banner \
               -loglevel warning \
               -nostdin \
-              -thread_queue_size 4096 \
+              -thread_queue_size 65536 \
               -i pipe:0 \
               -i "logoworld.png" \
               -filter_complex \
