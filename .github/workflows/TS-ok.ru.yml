@@ -12,18 +12,16 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Install FFmpeg (Latest)
+      - name: Install FFmpeg
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y ffmpeg
+          sudo apt-get install -y ffmpeg curl
           ffmpeg -version | head -1
 
       - name: Start Stream
         run: |
           RTMP_URL="rtmp://vsu.okcdn.ru/input/14627505512044_15347102124652_nyms3w6t7u"
-          
-          # استخدام البروكسي لتصحيح MIME type
-          SOURCE_URL="http://194.60.93.157/proxy?url=http://off28.lynxcontents.click:2086/live/171348492752/5S6HGsea3j/254746.m3u8?data=ixVd16Dy31bufAE7xi0trlZf-D3RV-4rJfyGGIQQA7M5fK_L8c97e4K6rDkXy_UamF3AZ0ezGAqmT6jVBnYskDPHdGw4W9AlDudpS8MKl0QneEDVUSl6hQ6Zg3ri6u9ppg3suI5o4tSV9Z5PhcRLfQ"
+          M3U8_URL="http://off28.lynxcontents.click:2086/live/171348492752/5S6HGsea3j/254746.m3u8?data=ixVd16Dy31bufAE7xi0trlZf-D3RV-4rJfyGGIQQA7M5fK_L8c97e4K6rDkXy_UamF3AZ0ezGAqmT6jVBnYskDPHdGw4W9AlDudpS8MKl0QneEDVUSl6hQ6Zg3ri6u9ppg3suI5o4tSV9Z5PhcRLfQ%3D%3D&expires=1781485860"
 
           if [ ! -f "logoworld.png" ]; then
             echo "❌ Logo file not found!"
@@ -32,23 +30,17 @@ jobs:
 
           FAIL_COUNT=0
           MAX_FAILS=10
+          LAST_SEQ=0
 
-          while [ $FAIL_COUNT -lt $MAX_FAILS ]; do
-            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-            echo "▶ Starting stream | Attempt: $((FAIL_COUNT + 1))"
-            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-
+          stream_segment() {
+            local TS_URL=$1
+            echo "📡 Streaming: $TS_URL"
             ffmpeg \
               -hide_banner \
-              -loglevel warning \
-              -stats \
+              -loglevel error \
               -reconnect 1 \
-              -reconnect_at_eof 1 \
-              -reconnect_streamed 1 \
-              -reconnect_delay_max 10 \
-              -timeout 15000000 \
-              -fflags +discardcorrupt+genpts \
-              -i "$SOURCE_URL" \
+              -reconnect_delay_max 5 \
+              -i "$TS_URL" \
               -i "logoworld.png" \
               -filter_complex \
                 "[1:v]scale=115:-1:flags=lanczos[logo];
@@ -69,23 +61,60 @@ jobs:
               -ac 2 \
               -f flv \
               "$RTMP_URL"
+          }
 
-            EXIT_CODE=$?
-            echo "⚠ FFmpeg exited with code: $EXIT_CODE"
+          while [ $FAIL_COUNT -lt $MAX_FAILS ]; do
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo "▶ Fetching playlist | Attempt: $((FAIL_COUNT + 1))"
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-            if [ $EXIT_CODE -eq 0 ]; then
-              echo "✅ Stream ended cleanly."
-              break
-            else
+            # جلب البلايلست
+            PLAYLIST=$(curl -s --max-time 10 "$M3U8_URL")
+
+            if [ -z "$PLAYLIST" ]; then
+              echo "❌ Failed to fetch playlist"
               FAIL_COUNT=$((FAIL_COUNT + 1))
-              WAIT=$((FAIL_COUNT * 3))
-              [ $WAIT -gt 30 ] && WAIT=30
-              echo "🔄 Reconnecting in ${WAIT}s... (Fail $FAIL_COUNT/$MAX_FAILS)"
-              sleep $WAIT
+              sleep 5
+              continue
             fi
+
+            # استخراج رقم التسلسل
+            SEQ=$(echo "$PLAYLIST" | grep "EXT-X-MEDIA-SEQUENCE" | grep -o '[0-9]*')
+            echo "📋 Sequence: $SEQ"
+
+            # استخراج روابط TS
+            TS_URLS=$(echo "$PLAYLIST" | grep "\.ts")
+
+            while IFS= read -r TS_URL; do
+              if [ -z "$TS_URL" ]; then continue; fi
+
+              # استخراج رقم الـ segment
+              SEG_NUM=$(echo "$TS_URL" | grep -o '[0-9]*\.ts' | grep -o '[0-9]*')
+
+              # تخطي القديمة
+              if [ "$SEG_NUM" -le "$LAST_SEQ" ] 2>/dev/null; then
+                echo "⏭ Skip segment $SEG_NUM"
+                continue
+              fi
+
+              LAST_SEQ=$SEG_NUM
+              stream_segment "$TS_URL"
+              EXIT_CODE=$?
+
+              if [ $EXIT_CODE -ne 0 ]; then
+                echo "⚠ Segment failed: $EXIT_CODE"
+                FAIL_COUNT=$((FAIL_COUNT + 1))
+              else
+                FAIL_COUNT=0
+              fi
+
+            done <<< "$TS_URLS"
+
+            sleep 2
+
           done
 
           if [ $FAIL_COUNT -ge $MAX_FAILS ]; then
-            echo "❌ Max reconnect attempts reached. Exiting."
+            echo "❌ Max reconnect attempts reached."
             exit 1
           fi
