@@ -1,4 +1,4 @@
-name: Ok.ru TS Stream - Native TS
+name: Ok.ru TS Stream - Stable
 
 on:
   workflow_dispatch:
@@ -28,92 +28,86 @@ jobs:
             exit 1
           fi
 
-          LAST_SEQ=0
-          FAIL_COUNT=0
-          MAX_FAILS=10
+          # فتح pipe - FFmpeg واحد يستقبل كل الـ segments
+          mkfifo /tmp/stream_pipe
 
-          while [ $FAIL_COUNT -lt $MAX_FAILS ]; do
-            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-            echo "▶ Fetching playlist"
-            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          # تشغيل FFmpeg في الخلفية يقرأ من الـ pipe
+          ffmpeg \
+            -hide_banner \
+            -loglevel warning \
+            -nostdin \
+            -re \
+            -i /tmp/stream_pipe \
+            -i "logoworld.png" \
+            -filter_complex \
+              "[1:v]scale=115:-1:flags=lanczos[logo];
+               [0:v][logo]overlay=30:main_h-overlay_h-30:format=auto,format=yuv420p,setsar=1" \
+            -c:v libx264 \
+            -preset veryfast \
+            -tune zerolatency \
+            -profile:v high \
+            -crf 20 \
+            -b:v 4500k \
+            -maxrate 5000k \
+            -bufsize 9000k \
+            -g 50 \
+            -keyint_min 25 \
+            -c:a aac \
+            -b:a 128k \
+            -ar 44100 \
+            -ac 2 \
+            -f flv \
+            "$RTMP_URL" &
+
+          FFMPEG_PID=$!
+          echo "🎬 FFmpeg PID: $FFMPEG_PID"
+
+          LAST_SEQ=0
+
+          # دالة لضخ segment للـ pipe
+          push_segment() {
+            local URL=$1
+            echo "📡 Pushing: $URL"
+            curl -s --max-time 30 "$URL" > /tmp/stream_pipe
+          }
+
+          while kill -0 $FFMPEG_PID 2>/dev/null; do
 
             PLAYLIST=$(curl -s --max-time 10 "$M3U8_URL" 2>/dev/null)
 
             if [ -z "$PLAYLIST" ]; then
-              echo "❌ Failed to fetch playlist"
-              FAIL_COUNT=$((FAIL_COUNT + 1))
-              sleep 5
-              continue
-            fi
-
-            # استخراج URLs بشكل نظيف
-            mapfile -t TS_URLS < <(echo "$PLAYLIST" | grep -o 'http[^[:space:]<>"]*\.ts' | tr -d '\r')
-
-            if [ ${#TS_URLS[@]} -eq 0 ]; then
-              echo "⚠ No TS URLs found"
+              echo "⚠ Empty playlist, retrying..."
               sleep 3
               continue
             fi
 
-            for TS_URL in "${TS_URLS[@]}"; do
-              # تنظيف إضافي
-              TS_URL=$(printf '%s' "$TS_URL" | tr -d '\r\n\t ')
+            mapfile -t TS_URLS < <(echo "$PLAYLIST" | grep -o 'http[^[:space:]]*\.ts' | tr -d '\r')
 
+            if [ ${#TS_URLS[@]} -eq 0 ]; then
+              sleep 3
+              continue
+            fi
+
+            PUSHED=0
+            for TS_URL in "${TS_URLS[@]}"; do
+              TS_URL=$(printf '%s' "$TS_URL" | tr -d '\r\n\t ')
               if [[ "$TS_URL" != http* ]]; then continue; fi
 
               SEG_NUM=$(echo "$TS_URL" | grep -o '[0-9]*\.ts$' | grep -o '^[0-9]*')
               if [ -z "$SEG_NUM" ]; then continue; fi
-
-              if [ "$SEG_NUM" -le "$LAST_SEQ" ] 2>/dev/null; then
-                echo "⏭ Skip $SEG_NUM"
-                continue
-              fi
+              if [ "$SEG_NUM" -le "$LAST_SEQ" ] 2>/dev/null; then continue; fi
 
               LAST_SEQ=$SEG_NUM
-              echo "📡 Segment $SEG_NUM → $TS_URL"
-
-              # -nostdin يمنع Parse error
-              # -y لتجاوز أي تأكيد
-              ffmpeg \
-                -hide_banner \
-                -loglevel error \
-                -nostdin \
-                -y \
-                -i "$TS_URL" \
-                -i "logoworld.png" \
-                -filter_complex \
-                  "[1:v]scale=115:-1:flags=lanczos[logo];
-                   [0:v][logo]overlay=30:main_h-overlay_h-30:format=auto,format=yuv420p,setsar=1" \
-                -c:v libx264 \
-                -preset veryfast \
-                -tune zerolatency \
-                -profile:v high \
-                -crf 20 \
-                -b:v 4500k \
-                -maxrate 5000k \
-                -bufsize 9000k \
-                -g 50 \
-                -keyint_min 25 \
-                -c:a aac \
-                -b:a 128k \
-                -ar 44100 \
-                -ac 2 \
-                -f flv \
-                "$RTMP_URL" </dev/null
-
-              EXIT_CODE=$?
-              if [ $EXIT_CODE -ne 0 ]; then
-                echo "⚠ Segment $SEG_NUM failed (exit $EXIT_CODE)"
-                FAIL_COUNT=$((FAIL_COUNT + 1))
-              else
-                FAIL_COUNT=0
-              fi
-
+              push_segment "$TS_URL"
+              PUSHED=$((PUSHED + 1))
             done
 
-            sleep 2
+            if [ $PUSHED -eq 0 ]; then
+              sleep 2
+            fi
 
           done
 
-          echo "❌ Max reconnect attempts reached."
+          echo "❌ FFmpeg process ended."
+          rm -f /tmp/stream_pipe
           exit 1
