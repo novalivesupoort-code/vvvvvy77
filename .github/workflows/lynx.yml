@@ -1,0 +1,136 @@
+name: Ok.ru TS Stream - Final Stable
+
+on:
+  workflow_dispatch:
+    inputs:
+      m3u8_url:
+        description: 'رابط البث M3U8'
+        required: true
+        type: string
+      rtmp_url:
+        description: 'رابط RTMP للبث'
+        required: true
+        type: string
+      stream_mode:
+        description: 'نوع البث'
+        required: true
+        type: choice
+        options:
+          - copy
+          - transcode
+
+jobs:
+  stream:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y ffmpeg python3-pip
+          pip3 install streamlink --break-system-packages
+          ffmpeg -version | head -1
+          streamlink --version
+
+      - name: Start Stream
+        run: |
+          RTMP_URL="${{ github.event.inputs.rtmp_url }}"
+          M3U8_URL="${{ github.event.inputs.m3u8_url }}"
+          MODE="${{ github.event.inputs.stream_mode }}"
+
+          echo "🎯 Mode: $MODE"
+
+          if [ ! -f "logoworld.png" ]; then
+            echo "❌ Logo file not found!"
+            exit 1
+          fi
+
+          FAIL_COUNT=0
+          MAX_FAILS=10
+
+          while [ $FAIL_COUNT -lt $MAX_FAILS ]; do
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo "▶ Starting stream | Attempt: $((FAIL_COUNT + 1))"
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+            if [ "$MODE" = "copy" ]; then
+              # Copy: نقل البث مباشرة بدون إعادة ترميز - أسرع وأخف
+              streamlink \
+                --stdout \
+                --loglevel warning \
+                --hls-live-restart \
+                --stream-segment-threads 3 \
+                --stream-timeout 60 \
+                --retry-streams 5 \
+                --retry-max 10 \
+                "$M3U8_URL" best \
+              | ffmpeg \
+                -hide_banner \
+                -loglevel warning \
+                -nostdin \
+                -thread_queue_size 65536 \
+                -i pipe:0 \
+                -c:v copy \
+                -c:a copy \
+                -f flv \
+                "$RTMP_URL"
+
+            else
+              # Transcode: إعادة ترميز مع اللوغو - جودة أعلى
+              streamlink \
+                --stdout \
+                --loglevel warning \
+                --hls-live-restart \
+                --stream-segment-threads 3 \
+                --stream-timeout 60 \
+                --retry-streams 5 \
+                --retry-max 10 \
+                "$M3U8_URL" best \
+              | ffmpeg \
+                -hide_banner \
+                -loglevel warning \
+                -nostdin \
+                -thread_queue_size 65536 \
+                -i pipe:0 \
+                -i "logoworld.png" \
+                -filter_complex \
+                  "[1:v]scale=115:-1:flags=lanczos[logo];
+                   [0:v][logo]overlay=30:main_h-overlay_h-30:format=auto,format=yuv420p,setsar=1" \
+                -c:v libx264 \
+                -preset veryfast \
+                -tune zerolatency \
+                -profile:v high \
+                -crf 20 \
+                -b:v 4500k \
+                -maxrate 5000k \
+                -bufsize 9000k \
+                -g 50 \
+                -keyint_min 25 \
+                -c:a aac \
+                -b:a 128k \
+                -ar 44100 \
+                -ac 2 \
+                -f flv \
+                "$RTMP_URL"
+            fi
+
+            EXIT_CODE=$?
+            echo "⚠ Exited with code: $EXIT_CODE"
+
+            if [ $EXIT_CODE -eq 0 ]; then
+              echo "✅ Stream ended cleanly."
+              break
+            fi
+
+            FAIL_COUNT=$((FAIL_COUNT + 1))
+            WAIT=$((FAIL_COUNT * 3))
+            [ $WAIT -gt 30 ] && WAIT=30
+            echo "🔄 Retry in ${WAIT}s..."
+            sleep $WAIT
+          done
+
+          [ $FAIL_COUNT -ge $MAX_FAILS ] && echo "❌ Max fails reached." && exit 1
