@@ -1,4 +1,4 @@
-name: Ok.ru TS Stream - Final Stable
+name: Lynx Live
 
 on:
   workflow_dispatch:
