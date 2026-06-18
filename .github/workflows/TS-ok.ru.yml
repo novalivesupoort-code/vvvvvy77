@@ -27,7 +27,7 @@ jobs:
 
       - name: Start Stream
         run: |
-          RTMP_URL="rtmp://vsu.okcdn.ru/input/14627505512044_15347102124652_nyms3w6t7u"
+          RTMP_URL="rtmp://stream.soop.live/app/maybe185-302564209"
           M3U8_URL="${{ github.event.inputs.m3u8_url }}"
 
           if [ ! -f "logoworld.png" ]; then
