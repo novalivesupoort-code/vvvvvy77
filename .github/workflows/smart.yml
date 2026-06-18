@@ -90,14 +90,16 @@ jobs:
         id: cache-ffmpeg
         uses: actions/cache@v4
         with:
-          path: /usr/bin/ffmpeg
-          key: ${{ runner.os }}-ffmpeg-apt
+          path: /usr/local/bin/ffmpeg
+          key: ${{ runner.os }}-ffmpeg-btbn-latest
 
       - name: Install FFmpeg
         if: steps.cache-ffmpeg.outputs.cache-hit != 'true'
         run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y ffmpeg
+          curl -sL https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-linux64-gpl.tar.xz \
+            | tar -xJ --strip-components=2 --wildcards '*/bin/ffmpeg' -C /usr/local/bin/
+          chmod +x /usr/local/bin/ffmpeg
+          echo "✅ FFmpeg: $(ffmpeg -version 2>&1 | head -1)"
 
       - name: Cache pip
         uses: actions/cache@v4
@@ -108,7 +110,6 @@ jobs:
       - name: Install Streamlink
         run: |
           pip3 install streamlink --break-system-packages -q
-          echo "✅ FFmpeg: $(ffmpeg -version 2>&1 | head -1)"
           echo "✅ Streamlink: $(streamlink --version)"
 
       - name: Prepare Logo
@@ -148,8 +149,7 @@ jobs:
             | ffmpeg \
               -hide_banner -loglevel warning -nostdin \
               -thread_queue_size 65536 \
-              -f mpegts \
-              -i pipe:0 \
+              -f mpegts -i pipe:0 \
               -c:v copy -c:a copy \
               -f flv "${{ github.event.inputs.rtmp_url }}"
 
@@ -215,8 +215,7 @@ jobs:
               | ffmpeg \
                 -hide_banner -loglevel warning -nostdin \
                 -thread_queue_size 65536 \
-                -f mpegts \
-                -i pipe:0 -i /tmp/logo.png \
+                -f mpegts -i pipe:0 -i /tmp/logo.png \
                 -filter_complex \
                   "[1:v]scale=${LOGO_SIZE}:-1:flags=lanczos[logo];
                    [0:v][logo]overlay=${OVERLAY}:format=auto,format=yuv420p,setsar=1" \
@@ -237,8 +236,7 @@ jobs:
               | ffmpeg \
                 -hide_banner -loglevel warning -nostdin \
                 -thread_queue_size 65536 \
-                -f mpegts \
-                -i pipe:0 \
+                -f mpegts -i pipe:0 \
                 -c:v libx264 -preset "$PRESET" -tune zerolatency \
                 -profile:v high \
                 -b:v "$VBITRATE" -maxrate "$MAXRATE" -bufsize "$BUFSIZE" \
