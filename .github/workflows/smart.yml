@@ -141,6 +141,7 @@ jobs:
             | ffmpeg \
               -hide_banner -loglevel warning -nostdin \
               -thread_queue_size 65536 \
+              -f mpegts \
               -i pipe:0 \
               -c:v copy -c:a copy \
               -f flv "${{ github.event.inputs.rtmp_url }}"
@@ -207,6 +208,7 @@ jobs:
               | ffmpeg \
                 -hide_banner -loglevel warning -nostdin \
                 -thread_queue_size 65536 \
+                -f mpegts \
                 -i pipe:0 -i /tmp/logo.png \
                 -filter_complex \
                   "[1:v]scale=${LOGO_SIZE}:-1:flags=lanczos[logo];
@@ -228,6 +230,7 @@ jobs:
               | ffmpeg \
                 -hide_banner -loglevel warning -nostdin \
                 -thread_queue_size 65536 \
+                -f mpegts \
                 -i pipe:0 \
                 -c:v libx264 -preset "$PRESET" -tune zerolatency \
                 -profile:v high \
