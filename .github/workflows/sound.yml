@@ -1,94 +1,39 @@
-name: 🎙️ Stream Video + Arabic Audio
+name: 📺 Stream TS (Low Latency)
 
 on:
   workflow_dispatch:
-    inputs:
-      video_url:
-        description: '📡 رابط الفيديو (M3U8)'
-        required: true
-        type: string
-      audio_url:
-        description: '🎙️ رابط الصوت العربي (mpegts)'
-        required: true
-        type: string
-      rtmp_url:
-        description: '🎯 رابط RTMP'
-        required: true
-        type: string
 
 jobs:
   stream:
     runs-on: ubuntu-latest
-    timeout-minutes: 350
 
     steps:
-      - name: Cache FFmpeg
-        id: cache-ffmpeg
-        uses: actions/cache@v4
-        with:
-          path: /usr/local/bin/ffmpeg
-          key: ${{ runner.os }}-ffmpeg-btbn-latest
-
       - name: Install FFmpeg
-        if: steps.cache-ffmpeg.outputs.cache-hit != 'true'
         run: |
-          cd /tmp
-          curl -sL https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-linux64-gpl.tar.xz -o ffmpeg.tar.xz
-          tar -xf ffmpeg.tar.xz
-          FFMPEG_BIN=$(find . -name 'ffmpeg' -type f | head -1)
-          sudo mv "$FFMPEG_BIN" /usr/local/bin/ffmpeg
-          sudo chmod +x /usr/local/bin/ffmpeg
-          echo "✅ FFmpeg ready"
-
-      - name: Cache pip
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-streamlink
-
-      - name: Install Streamlink
-        run: pip3 install streamlink --break-system-packages -q
+          sudo apt update
+          sudo apt install -y ffmpeg
 
       - name: Start Stream
         run: |
-          VIDEO_URL="${{ github.event.inputs.video_url }}"
-          AUDIO_URL="${{ github.event.inputs.audio_url }}"
-          RTMP_URL="${{ github.event.inputs.rtmp_url }}"
+          VIDEO_URL="http://2980382.c28s.cc/3003126827/3432645201/1416017?token=ShoJV0NcEgMVCVdRAQIPCFUAAVwCAFJdVwYFVQ8MU10CDlRTAlIGCAEaSUEXREVVBwg6DFUXC1UHBAZWCQJOR0RLBERvXVQbDRpXWlwABAhUR0lHRVxcAREPAVEABFVXBQxQDxwWQFBTGl9BVQMOAldWUUcdF1QcR1BCCFlZPQFUTghVVRYKV0JUCU9GX1lvAgAIBF9RE14RBRJKGlwRFRMCD0NcWBwbVVEREQVEUhJcR1NUBwATSBFWXxNWQRAcEwJDeHwWHBtSQBEGCkNeXwhHX0dFRhNIEVxDOUpQERFDXQBbVUYSAxUIR09GXVZIOQYKC19QUhBaWl4VGg9AVBMUQ1tfWllNWEo6Ew1UFQpEVFRRCAMJXRFI"
+          RTMP_URL="rtmp://vsu.okcdn.ru/input/14627505512044_15347102124652_nyms3w6t7u"
 
-          FAIL_COUNT=0
-          MAX_FAILS=10
-
-          while [ $FAIL_COUNT -lt $MAX_FAILS ]; do
-            echo "▶ Attempt: $((FAIL_COUNT + 1))"
-
-            mkfifo /tmp/video_pipe 2>/dev/null || true
-
-            streamlink \
-              --stdout --loglevel warning \
-              --hls-live-restart \
-              --retry-streams 5 --retry-max 10 \
-              "$VIDEO_URL" best > /tmp/video_pipe &
-            STREAMLINK_PID=$!
-
+          while true; do
             ffmpeg \
-              -hide_banner -loglevel warning -nostdin \
-              -thread_queue_size 65536 \
-              -f mpegts -i /tmp/video_pipe \
-              -thread_queue_size 65536 \
-              -reconnect 1 -reconnect_at_eof 1 -reconnect_streamed 1 \
-              -i "$AUDIO_URL" \
-              -map 0:v -map 1:a \
-              -c:v copy \
-              -c:a aac -b:a 128k \
+              -hide_banner \
+              -loglevel warning \
               -fflags nobuffer \
               -flags low_delay \
+              -probesize 32 \
+              -analyzeduration 0 \
+              -thread_queue_size 8192 \
+              -i "$VIDEO_URL" \
+              -map 0:v \
+              -c:v copy \
+              -an \
+              -flvflags no_duration_filesize \
               -f flv "$RTMP_URL"
 
-            EXIT_CODE=$?
-            kill $STREAMLINK_PID 2>/dev/null
-            rm -f /tmp/video_pipe
-
-            [ $EXIT_CODE -eq 0 ] && echo "✅ Done." && break
-            FAIL_COUNT=$((FAIL_COUNT + 1))
-            sleep 5
+            echo "Reconnecting..."
+            sleep 3
           done
