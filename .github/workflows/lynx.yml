@@ -58,7 +58,6 @@ jobs:
             echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
             if [ "$MODE" = "copy" ]; then
-              # Copy: نقل البث مباشرة بدون إعادة ترميز - أسرع وأخف
               streamlink \
                 --stdout \
                 --loglevel warning \
@@ -67,12 +66,15 @@ jobs:
                 --stream-timeout 60 \
                 --retry-streams 5 \
                 --retry-max 10 \
+                --http-header "User-Agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" \
+                --http-header "Referer=https://www.google.com/" \
                 "$M3U8_URL" best \
               | ffmpeg \
                 -hide_banner \
                 -loglevel warning \
                 -nostdin \
                 -thread_queue_size 65536 \
+                -f mpegts \
                 -i pipe:0 \
                 -c:v copy \
                 -c:a copy \
@@ -80,7 +82,6 @@ jobs:
                 "$RTMP_URL"
 
             else
-              # Transcode: إعادة ترميز مع اللوغو - جودة أعلى
               streamlink \
                 --stdout \
                 --loglevel warning \
@@ -89,12 +90,15 @@ jobs:
                 --stream-timeout 60 \
                 --retry-streams 5 \
                 --retry-max 10 \
+                --http-header "User-Agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" \
+                --http-header "Referer=https://www.google.com/" \
                 "$M3U8_URL" best \
               | ffmpeg \
                 -hide_banner \
                 -loglevel warning \
                 -nostdin \
                 -thread_queue_size 65536 \
+                -f mpegts \
                 -i pipe:0 \
                 -i "logoworld.png" \
                 -filter_complex \
