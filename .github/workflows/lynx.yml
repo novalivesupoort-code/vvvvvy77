@@ -88,8 +88,6 @@ jobs:
                 -loglevel warning \
                 -nostdin \
                 -thread_queue_size 65536 \
-                -allowed_extensions ALL \
-                -protocol_whitelist file,http,https,tcp,tls,crypto,pipe \
                 -f mpegts \
                 -i pipe:0 \
                 -c:v copy \
@@ -104,8 +102,6 @@ jobs:
                 -loglevel warning \
                 -nostdin \
                 -thread_queue_size 65536 \
-                -allowed_extensions ALL \
-                -protocol_whitelist file,http,https,tcp,tls,crypto,pipe \
                 -f mpegts \
                 -i pipe:0 \
                 -i "logoworld.png" \
