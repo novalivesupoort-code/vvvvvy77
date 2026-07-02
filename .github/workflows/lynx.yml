@@ -53,80 +53,87 @@ jobs:
           FAIL_COUNT=0
           MAX_FAILS=10
 
-          run_source() {
-            local URL=$1
+          while [ $FAIL_COUNT -lt $MAX_FAILS ]; do
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo "▶ Starting stream | Attempt: $((FAIL_COUNT + 1))"
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+            # جرب streamlink أولاً
+            echo "🔄 Trying streamlink..."
             streamlink \
               --stdout \
               --loglevel none \
               --hls-live-restart \
               --stream-segment-threads 3 \
               --stream-timeout 60 \
-              --retry-streams 3 \
-              --retry-max 3 \
+              --retry-streams 1 \
+              --retry-max 1 \
               --http-header "User-Agent=$UA" \
               --http-header "Referer=https://www.google.com/" \
-              "$URL" best 2>/dev/null
-
-            if [ $? -ne 0 ]; then
-              echo "⚠ streamlink failed, trying curl..." >&2
-              curl -s --max-time 0 \
-                -H "User-Agent: $UA" \
-                -H "Referer: https://www.google.com/" \
-                "$URL"
-            fi
-          }
-
-          while [ $FAIL_COUNT -lt $MAX_FAILS ]; do
-            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-            echo "▶ Starting stream | Attempt: $((FAIL_COUNT + 1))"
-            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-
-            if [ "$MODE" = "copy" ]; then
-              run_source "$M3U8_URL" \
-              | ffmpeg \
-                -hide_banner \
-                -loglevel warning \
-                -nostdin \
-                -thread_queue_size 65536 \
-                -f mpegts \
-                -i pipe:0 \
-                -c:v copy \
-                -c:a copy \
-                -f flv \
-                "$RTMP_URL"
-
-            else
-              run_source "$M3U8_URL" \
-              | ffmpeg \
-                -hide_banner \
-                -loglevel warning \
-                -nostdin \
-                -thread_queue_size 65536 \
-                -f mpegts \
-                -i pipe:0 \
-                -i "logoworld.png" \
-                -filter_complex \
-                  "[1:v]scale=115:-1:flags=lanczos[logo];
-                   [0:v][logo]overlay=30:main_h-overlay_h-30:format=auto,format=yuv420p,setsar=1" \
-                -c:v libx264 \
-                -preset veryfast \
-                -tune zerolatency \
-                -profile:v high \
-                -crf 20 \
-                -b:v 4500k \
-                -maxrate 5000k \
-                -bufsize 9000k \
-                -g 50 \
-                -keyint_min 25 \
-                -c:a aac \
-                -b:a 128k \
-                -ar 44100 \
-                -ac 2 \
-                -f flv \
-                "$RTMP_URL"
-            fi
+              "$M3U8_URL" best 2>/tmp/sl_err | \
+            ffmpeg \
+              -hide_banner -loglevel warning -nostdin \
+              -thread_queue_size 65536 \
+              -f mpegts -i pipe:0 \
+              $([ "$MODE" = "transcode" ] && echo "\
+              -i logoworld.png \
+              -filter_complex '[1:v]scale=115:-1:flags=lanczos[logo];[0:v][logo]overlay=30:main_h-overlay_h-30:format=auto,format=yuv420p,setsar=1' \
+              -c:v libx264 -preset veryfast -tune zerolatency -profile:v high \
+              -crf 20 -b:v 4500k -maxrate 5000k -bufsize 9000k \
+              -g 50 -keyint_min 25 \
+              -c:a aac -b:a 128k -ar 44100 -ac 2" \
+              || echo "-c:v copy -c:a copy") \
+              -f flv "$RTMP_URL"
 
             EXIT_CODE=$?
+
+            # إذا فشل streamlink جرب ffmpeg مباشرة
+            if [ $EXIT_CODE -ne 0 ]; then
+              echo "⚠ streamlink failed, trying ffmpeg direct..."
+
+              if [ "$MODE" = "copy" ]; then
+                ffmpeg \
+                  -hide_banner -loglevel warning -nostdin \
+                  -user_agent "$UA" \
+                  -headers "Referer: https://www.google.com/\r\n" \
+                  -reconnect 1 -reconnect_at_eof 1 -reconnect_streamed 1 \
+                  -reconnect_delay_max 5 \
+                  -thread_queue_size 65536 \
+                  -i "$M3U8_URL" \
+                  -c:v copy -c:a copy \
+                  -f flv "$RTMP_URL"
+              else
+                ffmpeg \
+                  -hide_banner -loglevel warning -nostdin \
+                  -user_agent "$UA" \
+                  -headers "Referer: https://www.google.com/\r\n" \
+                  -reconnect 1 -reconnect_at_eof 1 -reconnect_streamed 1 \
+                  -reconnect_delay_max 5 \
+                  -thread_queue_size 65536 \
+                  -i "$M3U8_URL" \
+                  -i "logoworld.png" \
+                  -filter_complex \
+                    "[1:v]scale=115:-1:flags=lanczos[logo];
+                     [0:v][logo]overlay=30:main_h-overlay_h-30:format=auto,format=yuv420p,setsar=1" \
+                  -c:v libx264 \
+                  -preset veryfast \
+                  -tune zerolatency \
+                  -profile:v high \
+                  -crf 20 \
+                  -b:v 4500k \
+                  -maxrate 5000k \
+                  -bufsize 9000k \
+                  -g 50 \
+                  -keyint_min 25 \
+                  -c:a aac \
+                  -b:a 128k \
+                  -ar 44100 \
+                  -ac 2 \
+                  -f flv "$RTMP_URL"
+              fi
+              EXIT_CODE=$?
+            fi
+
             echo "⚠ Exited with code: $EXIT_CODE"
 
             if [ $EXIT_CODE -eq 0 ]; then
