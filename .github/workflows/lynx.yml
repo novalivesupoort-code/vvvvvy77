@@ -53,10 +53,8 @@ jobs:
           FAIL_COUNT=0
           MAX_FAILS=10
 
-          # دالة تحاول streamlink أولاً ثم curl كـ fallback
           run_source() {
             local URL=$1
-            # جرب streamlink أولاً
             streamlink \
               --stdout \
               --loglevel none \
@@ -69,7 +67,6 @@ jobs:
               --http-header "Referer=https://www.google.com/" \
               "$URL" best 2>/dev/null
 
-            # إذا فشل streamlink استخدم curl مباشرة
             if [ $? -ne 0 ]; then
               echo "⚠ streamlink failed, trying curl..." >&2
               curl -s --max-time 0 \
@@ -92,7 +89,7 @@ jobs:
                 -nostdin \
                 -thread_queue_size 65536 \
                 -allowed_extensions ALL \
-                -protocol_whitelist file,http,https,tcp,tls,crypto \
+                -protocol_whitelist file,http,https,tcp,tls,crypto,pipe \
                 -f mpegts \
                 -i pipe:0 \
                 -c:v copy \
@@ -108,7 +105,7 @@ jobs:
                 -nostdin \
                 -thread_queue_size 65536 \
                 -allowed_extensions ALL \
-                -protocol_whitelist file,http,https,tcp,tls,crypto \
+                -protocol_whitelist file,http,https,tcp,tls,crypto,pipe \
                 -f mpegts \
                 -i pipe:0 \
                 -i "logoworld.png" \
