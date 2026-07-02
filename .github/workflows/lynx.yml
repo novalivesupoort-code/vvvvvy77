@@ -32,7 +32,7 @@ jobs:
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y ffmpeg python3-pip
-          pip3 install streamlink --break-system-packages
+          pip3 install streamlink --break-system-packages -q
           ffmpeg -version | head -1
           streamlink --version
 
@@ -41,6 +41,7 @@ jobs:
           RTMP_URL="${{ github.event.inputs.rtmp_url }}"
           M3U8_URL="${{ github.event.inputs.m3u8_url }}"
           MODE="${{ github.event.inputs.stream_mode }}"
+          UA="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 
           echo "🎯 Mode: $MODE"
 
@@ -52,28 +53,46 @@ jobs:
           FAIL_COUNT=0
           MAX_FAILS=10
 
+          # دالة تحاول streamlink أولاً ثم curl كـ fallback
+          run_source() {
+            local URL=$1
+            # جرب streamlink أولاً
+            streamlink \
+              --stdout \
+              --loglevel none \
+              --hls-live-restart \
+              --stream-segment-threads 3 \
+              --stream-timeout 60 \
+              --retry-streams 3 \
+              --retry-max 3 \
+              --http-header "User-Agent=$UA" \
+              --http-header "Referer=https://www.google.com/" \
+              "$URL" best 2>/dev/null
+
+            # إذا فشل streamlink استخدم curl مباشرة
+            if [ $? -ne 0 ]; then
+              echo "⚠ streamlink failed, trying curl..." >&2
+              curl -s --max-time 0 \
+                -H "User-Agent: $UA" \
+                -H "Referer: https://www.google.com/" \
+                "$URL"
+            fi
+          }
+
           while [ $FAIL_COUNT -lt $MAX_FAILS ]; do
             echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
             echo "▶ Starting stream | Attempt: $((FAIL_COUNT + 1))"
             echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
             if [ "$MODE" = "copy" ]; then
-              streamlink \
-                --stdout \
-                --loglevel warning \
-                --hls-live-restart \
-                --stream-segment-threads 3 \
-                --stream-timeout 60 \
-                --retry-streams 5 \
-                --retry-max 10 \
-                --http-header "User-Agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" \
-                --http-header "Referer=https://www.google.com/" \
-                "$M3U8_URL" best \
+              run_source "$M3U8_URL" \
               | ffmpeg \
                 -hide_banner \
                 -loglevel warning \
                 -nostdin \
                 -thread_queue_size 65536 \
+                -allowed_extensions ALL \
+                -protocol_whitelist file,http,https,tcp,tls,crypto \
                 -f mpegts \
                 -i pipe:0 \
                 -c:v copy \
@@ -82,22 +101,14 @@ jobs:
                 "$RTMP_URL"
 
             else
-              streamlink \
-                --stdout \
-                --loglevel warning \
-                --hls-live-restart \
-                --stream-segment-threads 3 \
-                --stream-timeout 60 \
-                --retry-streams 5 \
-                --retry-max 10 \
-                --http-header "User-Agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" \
-                --http-header "Referer=https://www.google.com/" \
-                "$M3U8_URL" best \
+              run_source "$M3U8_URL" \
               | ffmpeg \
                 -hide_banner \
                 -loglevel warning \
                 -nostdin \
                 -thread_queue_size 65536 \
+                -allowed_extensions ALL \
+                -protocol_whitelist file,http,https,tcp,tls,crypto \
                 -f mpegts \
                 -i pipe:0 \
                 -i "logoworld.png" \
