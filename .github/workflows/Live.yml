@@ -178,11 +178,10 @@ jobs:
             ENABLE_LOGO="false"
           fi
 
-          # ── فلتر اللوغو المُصحَّح ──────────────────
           if [ "$LOGO_OK" = "true" ]; then
-            VIDEO_FILTER="[1:v]scale=iw:ih[logo_scaled];[0:v][logo_scaled]overlay=0:0:format=auto,format=yuv420p[out]"
+            VIDEO_FILTER="[0:v]scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2[bg];[1:v]scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2[logo_scaled];[bg][logo_scaled]overlay=0:0[out]"
           else
-            VIDEO_FILTER="[0:v]format=yuv420p[out]"
+            VIDEO_FILTER="[0:v]scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2,format=yuv420p[out]"
           fi
 
           MAX_RATE=$(( VIDEO_BR + 500 ))
@@ -203,7 +202,7 @@ jobs:
                     --hls-live-restart \
                     --stream-segment-threads 4 \
                     --stream-timeout 60 \
-                    --retry-streams 1 --retry-max 1 --retry-open 1 \
+                    --retry-streams 3 --retry-max 3 --retry-open 3 \
                     --http-header "User-Agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" \
                     --http-header "Referer=https://www.google.com/" \
                     "$url" "$QUALITY" 2>/tmp/sl_err | \
@@ -213,7 +212,7 @@ jobs:
                     -f mpegts -i pipe:0 \
                     -i "logo.png" \
                     -filter_complex "$VIDEO_FILTER" \
-                    -map "[out]" -map 0:a \
+                    -map "[out]" -map 0:a? \
                     $(ffmpeg_video_args) \
                     -f flv "$RTMP_URL"
                   SL_EXIT=${PIPESTATUS[0]}
@@ -222,7 +221,7 @@ jobs:
                     --hls-live-restart \
                     --stream-segment-threads 4 \
                     --stream-timeout 60 \
-                    --retry-streams 1 --retry-max 1 --retry-open 1 \
+                    --retry-streams 3 --retry-max 3 --retry-open 3 \
                     --http-header "User-Agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" \
                     --http-header "Referer=https://www.google.com/" \
                     "$url" "$QUALITY" 2>/tmp/sl_err | \
@@ -231,14 +230,14 @@ jobs:
                     -thread_queue_size 65536 \
                     -f mpegts -i pipe:0 \
                     -filter_complex "$VIDEO_FILTER" \
-                    -map "[out]" -map 0:a \
+                    -map "[out]" -map 0:a? \
                     $(ffmpeg_video_args) \
                     -f flv "$RTMP_URL"
                   SL_EXIT=${PIPESTATUS[0]}
                 fi
 
                 if [ $SL_EXIT -ne 0 ]; then
-                  log_warn "streamlink فشل (403/blocked) → تجربة ffmpeg مباشرة..."
+                  log_warn "streamlink فشل → تجربة ffmpeg مباشرة..."
                   UA="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
                   if [ "$LOGO_OK" = "true" ]; then
                     ffmpeg \
@@ -251,7 +250,7 @@ jobs:
                       -i "$url" \
                       -i "logo.png" \
                       -filter_complex "$VIDEO_FILTER" \
-                      -map "[out]" -map 0:a \
+                      -map "[out]" -map 0:a? \
                       $(ffmpeg_video_args) \
                       -f flv "$RTMP_URL"
                   else
@@ -264,7 +263,7 @@ jobs:
                       -thread_queue_size 65536 \
                       -i "$url" \
                       -filter_complex "$VIDEO_FILTER" \
-                      -map "[out]" -map 0:a \
+                      -map "[out]" -map 0:a? \
                       $(ffmpeg_video_args) \
                       -f flv "$RTMP_URL"
                   fi
@@ -282,7 +281,7 @@ jobs:
                     -re -i "$url" \
                     -i "logo.png" \
                     -filter_complex "$VIDEO_FILTER" \
-                    -map "[out]" -map 0:a \
+                    -map "[out]" -map 0:a? \
                     $(ffmpeg_video_args) \
                     -f flv "$RTMP_URL"
                 else
@@ -291,7 +290,7 @@ jobs:
                     -thread_queue_size 65536 \
                     -re -i "$url" \
                     -filter_complex "$VIDEO_FILTER" \
-                    -map "[out]" -map 0:a \
+                    -map "[out]" -map 0:a? \
                     $(ffmpeg_video_args) \
                     -f flv "$RTMP_URL"
                 fi
@@ -318,7 +317,7 @@ jobs:
                   -thread_queue_size 65536 \
                   -re -i pipe:0 \
                   -filter_complex "$VIDEO_FILTER" \
-                  -map "[out]" -map 0:a \
+                  -map "[out]" -map 0:a? \
                   $(ffmpeg_video_args) \
                   -f flv "$RTMP_URL"
                 ;;
