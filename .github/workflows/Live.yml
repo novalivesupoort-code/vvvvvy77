@@ -178,10 +178,11 @@ jobs:
             ENABLE_LOGO="false"
           fi
 
+          # ── فلتر اللوغو المُصحَّح ──────────────────
           if [ "$LOGO_OK" = "true" ]; then
-            VIDEO_FILTER="[1:v][0:v]scale2ref[logo_sized][vid];[logo_sized]colorkey=black:0.15:0.05[logo];[vid]setsar=1[vid2];[vid2][logo]overlay=0:0,format=yuv420p[out]"
+            VIDEO_FILTER="[1:v]scale=iw:ih[logo_scaled];[0:v][logo_scaled]overlay=0:0:format=auto,format=yuv420p[out]"
           else
-            VIDEO_FILTER="[0:v]setsar=1,format=yuv420p[out]"
+            VIDEO_FILTER="[0:v]format=yuv420p[out]"
           fi
 
           MAX_RATE=$(( VIDEO_BR + 500 ))
