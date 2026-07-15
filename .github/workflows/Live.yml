@@ -51,7 +51,7 @@ jobs:
 
       - name: 🔍 Detect URL Type & Start Stream
         env:
-          RTMP_URL: "rtmp://stream.soop.live/app/iaj28euhs-813204288"
+          RTMP_URL: "rtmp://vsu.okcdn.ru/input/15499588542060_16909979945580_rl3cba3ney"
         run: |
           RED='\033[1;31m'
           GREEN='\033[1;32m'
