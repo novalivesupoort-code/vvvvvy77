@@ -29,7 +29,7 @@ jobs:
       - name: Start Stream
         run: |
           RTMP_URL="rtmp://142.132.194.230/live/bbayham"
-          SOURCE_URL="http://217.60.15.51:2095/live///b0:99:d7:15:88:50/3090914536649669/460861.m3u8?token=yXzbaHc.yyXbd.X.yXdba.yczHbdcU.X.y.FR.m3u8.414c9b7132ee3e14d875e7d25a3fc3aad9fb885b2dab9b1d557dd0bbc0c2edf1.5089.VmlyZ2luIE1lZGlh.MTg1LjE5MS4xMjYuMTI3"
+          SOURCE_URL="http://80.251.153.252:2095/BASHAR/68zZPafaZp/1046793?token=yXfXcdU.%D8%8C.1.%D8%8C1doAB.A.B.D.O.ts.adABDOOOef63cf8ef6ff2b7876416d8825992db224c7372288d25ed6f25babdo"
           USE_LOGO="${{ github.event.inputs.use_logo }}"
 
           # استخراج Origin و Referer تلقائياً من الرابط
@@ -88,7 +88,7 @@ jobs:
             )
 
             if [ "$USE_LOGO" = "true" ]; then
-              if [ ! -f "alwan0.png" ]; then
+              if [ ! -f "logo.png" ]; then
                 echo "❌ Logo file not found!"
                 exit 1
               fi
