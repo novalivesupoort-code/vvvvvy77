@@ -1,4 +1,4 @@
-name: 📺 Stream TS (Low Latency)
+name: Ok.ru TS Stream - Native TS
 
 on:
   workflow_dispatch:
@@ -7,33 +7,34 @@ jobs:
   stream:
     runs-on: ubuntu-latest
 
+    env:
+      FORCE_JUST_NODE24: true
+
     steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
       - name: Install FFmpeg
-        run: |
-          sudo apt update
-          sudo apt install -y ffmpeg
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
 
-      - name: Start Stream
+      - name: Start Native 1080p Stream
         run: |
-          VIDEO_URL="http://2980382.c28s.cc/3003126827/3432645201/1416017?token=ShoJV0NcEgMVCVdRAQIPCFUAAVwCAFJdVwYFVQ8MU10CDlRTAlIGCAEaSUEXREVVBwg6DFUXC1UHBAZWCQJOR0RLBERvXVQbDRpXWlwABAhUR0lHRVxcAREPAVEABFVXBQxQDxwWQFBTGl9BVQMOAldWUUcdF1QcR1BCCFlZPQFUTghVVRYKV0JUCU9GX1lvAgAIBF9RE14RBRJKGlwRFRMCD0NcWBwbVVEREQVEUhJcR1NUBwATSBFWXxNWQRAcEwJDeHwWHBtSQBEGCkNeXwhHX0dFRhNIEVxDOUpQERFDXQBbVUYSAxUIR09GXVZIOQYKC19QUhBaWl4VGg9AVBMUQ1tfWllNWEo6Ew1UFQpEVFRRCAMJXRFI"
-          RTMP_URL="rtmp://vsu.okcdn.ru/input/14627505512044_15347102124652_nyms3w6t7u"
-
           while true; do
-            ffmpeg \
-              -hide_banner \
-              -loglevel warning \
-              -fflags nobuffer \
-              -flags low_delay \
-              -probesize 32 \
-              -analyzeduration 0 \
-              -thread_queue_size 8192 \
-              -i "$VIDEO_URL" \
-              -map 0:v \
-              -c:v copy \
-              -an \
-              -flvflags no_duration_filesize \
-              -f flv "$RTMP_URL"
-
-            echo "Reconnecting..."
-            sleep 3
+            echo "Starting native 1080p stream with OK.ru optimized audio..."
+            
+            ffmpeg -re -hide_banner -loglevel error \
+            -reconnect 1 -reconnect_at_eof 1 -reconnect_streamed 1 -reconnect_delay_max 5 \
+            -i "http://2980382.c28s.cc/3003126827/3432645201/1416017?token=ShoJV0NcEgMVCVdRAQIPCFUAAVwCAFJdVwYFVQ8MU10CDlRTAlIGCAEaSUEXREVVBwg6DFUXC1UHBAZWCQJOR0RLBERvXVQbDRpXWlwABAhUR0lHRVxcAREPAVEABFVXBQxQDxwWQFBTGl9BVQMOAldWUUcdF1QcR1BCCFlZPQFUTghVVRYKV0JUCU9GX1lvAgAIBF9RE14RBRJKGlwRFRMCD0NcWBwbVVEREQVEUhJcR1NUBwATSBFWXxNWQRAcEwJDeHwWHBtSQBEGCkNeXwhHX0dFRhNIEVxDOUpQERFDXQBbVUYSAxUIR09GXVZIOQYKC19QUhBaWl4VGg9AVBMUQ1tfWllNWEo6Ew1UFQpEVFRRCAMJXRFI" \
+            -i "logoworld.png" \
+            -filter_complex \
+            "[1:v]scale=iw*0.10:-1[logo]; \
+             [0:v]eq=brightness=0.04:contrast=1.12:saturation=1.30[video]; \
+             [video][logo]overlay=30:main_h-overlay_h-30:format=auto,format=yuv420p" \
+            -vcodec libx264 -preset veryfast -crf 18 -tune zerolatency -g 50 \
+            -b:v 4500k -maxrate 4500k -bufsize 9500k \
+            -acodec aac -b:a 128k -ar 44100 -async 1 \
+            -f flv "rtmp://vsu.okcdn.ru/input/15499588542060_16909979945580_rl3cba3ney"
+            
+            echo "Stream interrupted. Reconnecting in 5 seconds..."
+            sleep 5
           done
