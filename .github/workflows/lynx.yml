@@ -45,7 +45,7 @@ jobs:
 
           echo "🎯 Mode: $MODE"
 
-          if [ ! -f "logoworld.png" ]; then
+          if [ ! -f "ayhamm.png" ]; then
             echo "❌ Logo file not found!"
             exit 1
           fi
@@ -76,7 +76,7 @@ jobs:
               -thread_queue_size 65536 \
               -f mpegts -i pipe:0 \
               $([ "$MODE" = "transcode" ] && echo "\
-              -i logoworld.png \
+              -i ayhamm.png \
               -filter_complex '[1:v]scale=115:-1:flags=lanczos[logo];[0:v][logo]overlay=30:main_h-overlay_h-30:format=auto,format=yuv420p,setsar=1' \
               -c:v libx264 -preset veryfast -tune zerolatency -profile:v high \
               -crf 20 -b:v 4500k -maxrate 5000k -bufsize 9000k \
