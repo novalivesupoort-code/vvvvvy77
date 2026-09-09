@@ -51,13 +51,13 @@ jobs:
               -analyzeduration 10000000 -probesize 20000000 \
               -thread_queue_size 1024 \
               -i "$SOURCE_URL" \
-              -loop 1 -framerate 30 -i "$LOGO_FILE" \
-              -filter_complex "[1:v]scale=1920:1080:flags=lanczos[logo];[logo][0:v]overlay=0:0:eof_action=repeat:format=auto,format=yuv420p,setsar=1[v]" \
+              -loop 1 -framerate 25 -i "$LOGO_FILE" \
+              -filter_complex "[1:v]scale=1920:1080:flags=lanczos,format=yuv420p[logo];[logo][0:v]overlay=0:0:eof_action=repeat:format=auto,setsar=1[v]" \
               -map "[v]" -map 0:a? \
               -c:v libx264 -preset veryfast -tune zerolatency -profile:v high \
-              -pix_fmt yuv420p -crf 18 -maxrate 6000k -bufsize 12000k \
-              -g 60 -keyint_min 30 -sc_threshold 0 \
-              -c:a aac -b:a 192k -ar 48000 -ac 2 \
+              -pix_fmt yuv420p -crf 18 -maxrate 5000k -bufsize 10000k \
+              -g 50 -keyint_min 25 -sc_threshold 0 -r 25 \
+              -c:a aac -b:a 160k -ar 44100 -ac 2 \
               -af "aresample=async=1:min_hard_comp=0.100:first_pts=0" \
               -max_muxing_queue_size 4096 \
               -flvflags no_duration_filesize \
