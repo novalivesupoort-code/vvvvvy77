@@ -12,20 +12,18 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Setup FFmpeg (Fast)
+      - name: Setup Tools (Fast)
         run: |
-          if ! command -v ffmpeg &> /dev/null; then
-            sudo apt-get update -qq
-            sudo apt-get install -y ffmpeg
-          else
-            echo "✅ FFmpeg is already installed!"
-          fi
+          sudo apt-get update -qq
+          sudo apt-get install -y ffmpeg python3-pip
+          pip install --quiet streamlink
           ffmpeg -version | head -1
+          streamlink --version
 
       - name: Start Stream
         run: |
           RTMP_URL="rtmp://vsu.okcdn.ru/input/15980421979756_17750707931756_3zvyihuvcy"
-          SOURCE_URL="https://www.manar2.shop/x1/59_0.m3u8"
+          SOURCE_URL="http://www.manar2.shop/x1/59_0.m3u8"
 
           if [ ! -f "logocopyayham.png" ]; then
             echo "❌ Logo file not found!"
@@ -37,24 +35,23 @@ jobs:
 
           while [ $FAIL_COUNT -lt $MAX_FAILS ]; do
             echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-            echo "▶ Starting stream | Attempt: $((FAIL_COUNT + 1))"
+            echo "▶ Starting Streamlink + FFmpeg Engine | Attempt: $((FAIL_COUNT + 1))"
             echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-            ffmpeg \
+            streamlink \
+              --loglevel warning \
+              --retry-streams 5 \
+              --retry-open 5 \
+              --stream-segment-attempts 5 \
+              --stream-segment-timeout 10 \
+              --http-header "User-Agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36" \
+              --http-header "Referer=http://www.manar2.shop/" \
+              "hlsvariant://$SOURCE_URL" best \
+              -O | ffmpeg \
               -hide_banner \
               -loglevel warning \
               -stats \
-              -user_agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36" \
-              -headers $'Accept: */*\r\nConnection: keep-alive\r\n' \
-              -reconnect 1 \
-              -reconnect_at_eof 1 \
-              -reconnect_streamed 1 \
-              -reconnect_delay_max 5 \
-              -reconnect_on_network_error 1 \
-              -rw_timeout 15000000 \
-              -allowed_extensions ALL \
-              -protocol_whitelist "file,http,https,tcp,tls,crypto,m3u8,hls" \
-              -i "$SOURCE_URL" \
+              -i - \
               -i "logocopyayham.png" \
               -filter_complex \
                 "[1:v][0:v]scale2ref[logo][video];
@@ -78,11 +75,7 @@ jobs:
               "$RTMP_URL"
 
             EXIT_CODE=$?
-            echo "⚠ FFmpeg exited with code: $EXIT_CODE"
-
-            if [ $EXIT_CODE -eq 0 ] || [ $EXIT_CODE -eq 255 ]; then
-              echo "✅ Stream interrupted. Restarting..."
-            fi
+            echo "⚠ Pipeline exited with code: $EXIT_CODE"
 
             FAIL_COUNT=$((FAIL_COUNT + 1))
             WAIT=$((FAIL_COUNT * 3))
