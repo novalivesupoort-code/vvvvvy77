@@ -1,4 +1,4 @@
-name: 1080p@25FPS
+Name: 1080p@25FPS
 
 on:
   workflow_dispatch:
@@ -40,15 +40,15 @@ jobs:
               -hide_banner \
               -loglevel warning \
               -stats \
+              -user_agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" \
+              -headers "Accept: */*" \
               -reconnect 1 \
               -reconnect_at_eof 1 \
               -reconnect_streamed 1 \
               -reconnect_delay_max 10 \
               -reconnect_on_network_error 1 \
-              -timeout 30000000 \
-              -fflags +discardcorrupt+genpts+igndts \
-              -analyzeduration 10000000 \
-              -probesize 20000000 \
+              -allowed_extensions ALL \
+              -protocol_whitelist file,http,https,tcp,tls,crypto,m3u8 \
               -i "$SOURCE_URL" \
               -i "logocopyayham.png" \
               -filter_complex \
