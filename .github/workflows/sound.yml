@@ -40,11 +40,12 @@ jobs:
           [[ ! "$RTMP_URL" =~ ^rtmp(s)?:// ]] && { echo "❌ رابط RTMP غير صحيح"; exit 1; }
 
           while true; do
-            echo "▶ بدء البث..."
+            echo "▶ بدء البث... $(date '+%Y-%m-%d %H:%M:%S')"
             ffmpeg \
               -hide_banner -loglevel warning -stats -nostdin \
               -reconnect 1 -reconnect_at_eof 1 -reconnect_streamed 1 \
               -reconnect_on_network_error 1 -reconnect_delay_max 10 \
+              -seekable 0 \
               -rw_timeout 30000000 \
               -fflags +discardcorrupt+genpts+igndts \
               -err_detect ignore_err \
@@ -63,6 +64,6 @@ jobs:
               -flvflags no_duration_filesize \
               -f flv "$RTMP_URL"
 
-            echo "⚠ FFmpeg توقف، إعادة الاتصال بعد 5 ثواني..."
+            echo "⚠ FFmpeg توقف (كود الخروج: $?)، إعادة الاتصال بعد 5 ثواني..."
             sleep 5
           done
