@@ -23,7 +23,7 @@ jobs:
       - name: Start Stream
         run: |
           RTMP_URL="rtmp://stream.soop.live/app/iaj28euhs-813204288-VR"
-          SOURCE_URL="https://www.manar2.shop/x1/59_0.m3u8"
+          SOURCE_URL="http://www.manar2.shop/x1/65_0.m3u8"
 
           if [ ! -f "logocopyayhamA.png" ]; then
             echo "❌ Logo file not found!"
