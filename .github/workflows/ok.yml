@@ -23,7 +23,7 @@ jobs:
       - name: Start Stream
         run: |
           RTMP_URL="rtmp://stream.soop.live/app/iaj28euhs-813204288-VR"
-          SOURCE_URL="http://www.manar2.shop/x1/65_0.m3u8"
+          SOURCE_URL="http://ayham.b-cdn.net/beinsports2/tracks-v1a1/mono.m3u8?token=ayham"
 
           if [ ! -f "logocopyayhamA.png" ]; then
             echo "❌ Logo file not found!"
@@ -45,7 +45,7 @@ jobs:
               --stream-segment-attempts 5 \
               --stream-segment-timeout 10 \
               --http-header "User-Agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36" \
-              --http-header "Referer=http://www.manar2.shop/" \
+              --http-header "Referer=http://ayham.b-cdn.net/" \
               "hlsvariant://$SOURCE_URL" best \
               -O | ffmpeg \
               -hide_banner \
@@ -64,11 +64,11 @@ jobs:
               -b:v 4500k \
               -maxrate 5000k \
               -bufsize 9000k \
-              -g 50 \
-              -keyint_min 25 \
+              -g 120 \
+              -keyint_min 60 \
               -c:a aac \
               -b:a 160k \
-              -ar 44100 \
+              -ar 48000 \
               -ac 2 \
               -max_muxing_queue_size 2048 \
               -f flv \
