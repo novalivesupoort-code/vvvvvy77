@@ -22,8 +22,8 @@ jobs:
 
       - name: Start Stream
         run: |
-          RTMP_URL="rtmp://stream.soop.live/app/iaj28euhs-813204288-VR"
-          SOURCE_URL="http://www.manar2.shop/x1/59_0.m3u8"
+          RTMP_URL="rtmp://stream.soop.live/app/iaj28euhs-813204288"
+          SOURCE_URL="http://bdix.spidy.online/MAC/SBHGOLD/play.php?id=1156630"
 
           if [ ! -f "logocopyayham.png" ]; then
             echo "❌ Logo file not found!"
@@ -46,7 +46,7 @@ jobs:
               --stream-segment-attempts 5 \
               --stream-segment-timeout 10 \
               --http-header "User-Agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36" \
-              --http-header "Referer=http://www.manar2.shop/" \
+              --http-header "Referer=http://bdix.spidy.online" \
               "http://$SOURCE_URL#m3u8-allow-insecure-with-blocked=1" best 2>/dev/null || \
             PYTHONWARNINGS="ignore" streamlink \
               --loglevel warning \
