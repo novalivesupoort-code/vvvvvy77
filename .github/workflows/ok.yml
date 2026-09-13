@@ -1,4 +1,4 @@
-name: 1080p@25FPS
+Name: 1080p@25FPS
 
 on:
   workflow_dispatch:
@@ -44,6 +44,8 @@ jobs:
               --retry-open 5 \
               --stream-segment-attempts 5 \
               --stream-segment-timeout 10 \
+              --http-no-ssl-verify \
+              --hls-permit-data-urls \
               --http-header "User-Agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36" \
               --http-header "Referer=https://bdix.spidy.online" \
               "hlsvariant://$SOURCE_URL" best \
@@ -54,10 +56,10 @@ jobs:
               -f mpegts -i pipe:0 \
               -loop 1 -i "logocopyayhamA.png" \
               -filter_complex \
-                "[1:v][0:v]scale2ref[logo][video];
-                 [video][logo]overlay=0:0:format=auto,format=yuv420p,setsar=1" \
+                "[0:v]format=yuv420p,setsar=1[video];
+                 [video][1:v]overlay=0:0:shortest=1" \
               -c:v libx264 \
-              -preset ​faster \
+              -preset faster \
               -tune zerolatency \
               -profile:v high \
               -crf 20 \
