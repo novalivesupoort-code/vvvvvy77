@@ -23,7 +23,7 @@ jobs:
       - name: Start Stream
         run: |
           RTMP_URL="rtmp://stream.soop.live/app/iaj28euhs-813204288"
-          SOURCE_URL="http://www.manar2.shop/x1/65_0.m3u8"
+          SOURCE_URL="http://str2.v3v3v.xyz/live/Nabil_384986/MATxRQG3/1356802.m3u8"
 
           if [ ! -f "logocopyayhamA.png" ]; then
             echo "❌ Logo file not found!"
@@ -45,7 +45,7 @@ jobs:
               --stream-segment-attempts 5 \
               --stream-segment-timeout 10 \
               --http-header "User-Agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36" \
-              --http-header "Referer=http://www.manar2.shop/" \
+              --http-header "Referer=http://str2.v3v3v.xyz/" \
               "hlsvariant://$SOURCE_URL" best \
               -O | ffmpeg \
               -hide_banner \
