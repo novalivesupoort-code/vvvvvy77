@@ -23,7 +23,7 @@ jobs:
       - name: Start Stream
         run: |
           RTMP_URL="rtmp://stream.soop.live/app/iaj28euhs-813204288-VR"
-          SOURCE_URL="http://ayham.b-cdn.net/beinsports2/tracks-v1a1/mono.m3u8?token=ayham"
+          SOURCE_URL="https://fd1117.godad.it.com/live/235756_.m3u8?session=gLqpyDoWEhgr3H8MJ8v3RO2Xpr6VRYErxunmZLxADzy2VYVFen5fsMLp1mMtUv-mmiZDcqPFsFz5Q2fZ8Sk2ly55Xk6nwlqZ&location=local"
 
           if [ ! -f "logocopyayhamA.png" ]; then
             echo "❌ Logo file not found!"
@@ -45,7 +45,7 @@ jobs:
               --stream-segment-attempts 5 \
               --stream-segment-timeout 10 \
               --http-header "User-Agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36" \
-              --http-header "Referer=http://ayham.b-cdn.net/" \
+              --http-header "Referer=https://fd1117.godad.it.com/" \
               "hlsvariant://$SOURCE_URL" best \
               -O | ffmpeg \
               -hide_banner \
@@ -57,15 +57,14 @@ jobs:
                 "[1:v][0:v]scale2ref[logo][video];
                  [video][logo]overlay=0:0:format=auto,format=yuv420p,setsar=1" \
               -c:v libx264 \
-              -preset veryfast \
+              -preset ​faster \
               -tune zerolatency \
               -profile:v high \
               -crf 20 \
-              -b:v 4500k \
-              -maxrate 5000k \
-              -bufsize 9000k \
-              -g 120 \
-              -keyint_min 60 \
+              -maxrate 6000k \
+              -bufsize 12000k \
+              -g 60 \
+              -keyint_min 30 \
               -c:a aac \
               -b:a 160k \
               -ar 48000 \
