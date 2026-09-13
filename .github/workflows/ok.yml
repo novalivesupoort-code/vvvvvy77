@@ -23,9 +23,9 @@ jobs:
       - name: Start Stream
         run: |
           RTMP_URL="rtmp://stream.soop.live/app/iaj28euhs-813204288"
-          SOURCE_URL="http://bdix.spidy.online/MAC/SBHGOLD/play.php?id=1156630"
+          SOURCE_URL="http://www.manar2.shop/x1/65_0.m3u8"
 
-          if [ ! -f "logocopyayham.png" ]; then
+          if [ ! -f "logocopyayhamA.png" ]; then
             echo "❌ Logo file not found!"
             exit 1
           fi
@@ -38,29 +38,21 @@ jobs:
             echo "▶ Starting Streamlink + FFmpeg Engine | Attempt: $((FAIL_COUNT + 1))"
             echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-            PYTHONWARNINGS="ignore" streamlink \
+            streamlink \
               --loglevel warning \
-              --http-no-ssl-verify \
               --retry-streams 5 \
               --retry-open 5 \
               --stream-segment-attempts 5 \
               --stream-segment-timeout 10 \
               --http-header "User-Agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36" \
-              --http-header "Referer=http://bdix.spidy.online" \
-              "http://$SOURCE_URL#m3u8-allow-insecure-with-blocked=1" best 2>/dev/null || \
-            PYTHONWARNINGS="ignore" streamlink \
-              --loglevel warning \
-              --http-no-ssl-verify \
-              --retry-streams 5 \
-              --retry-open 5 \
-              --http-header "User-Agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36" \
-              "$SOURCE_URL" best \
+              --http-header "Referer=http://www.manar2.shop/" \
+              "hlsvariant://$SOURCE_URL" best \
               -O | ffmpeg \
               -hide_banner \
               -loglevel warning \
               -stats \
               -f mpegts -i pipe:0 \
-              -loop 1 -i "logocopyayham.png" \
+              -loop 1 -i "logocopyayhamA.png" \
               -filter_complex \
                 "[1:v][0:v]scale2ref[logo][video];
                  [video][logo]overlay=0:0:format=auto,format=yuv420p,setsar=1" \
