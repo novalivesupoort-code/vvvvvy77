@@ -23,7 +23,7 @@ jobs:
       - name: Start Stream
         run: |
           RTMP_URL="rtmp://stream.soop.live/app/iaj28euhs-813204288-VR"
-          SOURCE_URL="http://g.noventix.cc/ed86507gvijbfredvj8hvb$@786865/!!ioojnb510cac87xxzxgguugyuu(/*ih*iuhi***"huugu8ugbhiy45efvhnbvvvvvccseewszsddodb8vcsw3sxghui8ubbbbc54edvhu4df35ed86507gvijbfredvj8hvb$@786865/!!ioojnb510cac87xxzxgguugyuu(/*ih*iuhi***"huugu8ugbhiy45efvhnbvvvvvccseewszsddodb8vcsw3sxghui8ubbbbc54edvhu4df35(/////ed86507gvijbfredvj8hvb$@786865/!!ioojnb510cac87xxzxgguugyuu(/*ih*iuhi***"huugu8ugbhiy45efvhnbvvvvvccseewszsddodb8vcsw3sxghui8ubbbbc54edvhu4df35(/////ed86507gvijbfredvj8hvb$@786865/!!ioojnb510cac87xxzxgguugyuu(/*ih*iuhi***"huugu8ugbhiy45efvhnbvvvvvccseewszsddodb8vcsw3sxghui8ubbbbc54edvhu4df35(/////(////////////////g/986976?token=ShN0YQ0JGlhBVEk9ShAWG04kBi5fWQJEC0E8WgsHJDJHQQQJQQQQQ1JHG0EQQQQQQQ0QQQ0UWwVQAVVQUwxNQ0QQQQQQQQxAWUcQAQQQQQQQRhVGQQQQQUcNUFJQDFFQBQQACEgSQQQQRw1BQQQHQQQQQEYcFAQQQQQQQQQQQQQQQQQQQRICDBYJW09EV1xnBQFUBV5SQw5HBkNJRAQQQRMLXEQIXBRAAQxDEQdMVxpbRghcBwBDGEdUDhAITRMYEwsQdSESFEAGHUMGCEtbVw9GA0ZERUMYR14SOhRcEhVDVFNcAUIaWEFVFU9EVVNAPgdWCl5TAkAMQQQQRANDQBMdEFQQQQQQAQQQEQQQEAJDQQQQQQQQQ0dK"
+          SOURCE_URL="https://bdix.spidy.online/MAC/SBHGOLD/play.php?id=1156630"
 
           if [ ! -f "logocopyayhamA.png" ]; then
             echo "❌ Logo file not found!"
@@ -45,7 +45,7 @@ jobs:
               --stream-segment-attempts 5 \
               --stream-segment-timeout 10 \
               --http-header "User-Agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36" \
-              --http-header "Referer=http://g.noventix.cc/" \
+              --http-header "Referer=https://bdix.spidy.online" \
               "hlsvariant://$SOURCE_URL" best \
               -O | ffmpeg \
               -hide_banner \
