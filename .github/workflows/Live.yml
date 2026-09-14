@@ -35,7 +35,7 @@ jobs:
 
           while [ $FAIL_COUNT -lt $MAX_FAILS ]; do
             echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-            echo "▶ Starting Balanced Engine | Attempt: $((FAIL_COUNT + 1))"
+            echo "▶ Starting Pure Quality Stream | Attempt: $((FAIL_COUNT + 1))"
             echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
             if [[ "$SOURCE_URL" == *".ts"* ]]; then
@@ -52,27 +52,21 @@ jobs:
                 -reconnect_delay_max 5 \
                 -fflags +genpts+discardcorrupt \
                 -f mpegts -i "$SOURCE_URL" \
-                -loop 1 -i "logocopyayhamA.png" \
-                -filter_complex \
-                  "[0:v]eq=saturation=1.12:contrast=1.05:brightness=0.01,unsharp=3:3:0.4:3:3:0.0[enhanced];
-                   [1:v][enhanced]scale2ref[logo][video];
-                   [video][logo]overlay=0:0:format=auto,format=yuv420p,setsar=1" \
+                -i "logocopyayhamA.png" \
+                -filter_complex "[0:v][1:v]overlay=0:0" \
                 -c:v libx264 \
                 -preset ultrafast \
                 -tune zerolatency \
-                -profile:v high \
-                -color_primaries bt709 \
-                -color_trc bt709 \
-                -colorspace bt709 \
-                -crf 21 \
-                -b:v 4500k \
-                -maxrate 5000k \
-                -bufsize 9000k \
+                -crf 18 \
+                -b:v 5500k \
+                -maxrate 6000k \
+                -bufsize 12000k \
+                -pix_fmt yuv420p \
                 -c:a aac \
-                -b:a 160k \
+                -b:a 128k \
                 -ar 44100 \
                 -ac 2 \
-                -max_muxing_queue_size 2048 \
+                -max_muxing_queue_size 1024 \
                 -f flv \
                 "$RTMP_URL"
             else
@@ -92,27 +86,21 @@ jobs:
                 -stats \
                 -fflags +genpts+discardcorrupt \
                 -f mpegts -i pipe:0 \
-                -loop 1 -i "logocopyayhamA.png" \
-                -filter_complex \
-                  "[0:v]eq=saturation=1.12:contrast=1.05:brightness=0.01,unsharp=3:3:0.4:3:3:0.0[enhanced];
-                   [1:v][enhanced]scale2ref[logo][video];
-                   [video][logo]overlay=0:0:format=auto,format=yuv420p,setsar=1" \
+                -i "logocopyayhamA.png" \
+                -filter_complex "[0:v][1:v]overlay=0:0" \
                 -c:v libx264 \
                 -preset ultrafast \
                 -tune zerolatency \
-                -profile:v high \
-                -color_primaries bt709 \
-                -color_trc bt709 \
-                -colorspace bt709 \
-                -crf 21 \
-                -b:v 4500k \
-                -maxrate 5000k \
-                -bufsize 9000k \
+                -crf 18 \
+                -b:v 5500k \
+                -maxrate 6000k \
+                -bufsize 12000k \
+                -pix_fmt yuv420p \
                 -c:a aac \
-                -b:a 160k \
+                -b:a 128k \
                 -ar 44100 \
                 -ac 2 \
-                -max_muxing_queue_size 2048 \
+                -max_muxing_queue_size 1024 \
                 -f flv \
                 "$RTMP_URL"
             fi
