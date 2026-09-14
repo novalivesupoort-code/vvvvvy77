@@ -1,4 +1,4 @@
-name: 1080p@AutoFPS-ProFidelity
+name: 1080p@Auto-Engine
 
 on:
   workflow_dispatch:
@@ -35,48 +35,89 @@ jobs:
 
           while [ $FAIL_COUNT -lt $MAX_FAILS ]; do
             echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-            echo "▶ Starting Stream (Pro Fidelity & Speed 1.0x) | Attempt: $((FAIL_COUNT + 1))"
+            echo "▶ Starting Hybrid Engine | Attempt: $((FAIL_COUNT + 1))"
             echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-            streamlink \
-              --loglevel warning \
-              --retry-streams 5 \
-              --retry-open 5 \
-              --stream-segment-attempts 5 \
-              --stream-segment-timeout 10 \
-              --http-header "User-Agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36" \
-              --http-header "Referer=http://g.avivorix.cc/" \
-              "hlsvariant://$SOURCE_URL" best \
-              -O | ffmpeg \
-              -hide_banner \
-              -loglevel warning \
-              -stats \
-              -fflags +genpts+discardcorrupt \
-              -f mpegts -i pipe:0 \
-              -loop 1 -i "logocopyayhamA.png" \
-              -filter_complex \
-                "[0:v]scale=in_range=limited:out_range=full,eq=saturation=1.18:contrast=1.09:brightness=0.01:gamma=1.04,hqdn3d=1.5:1.5:3:3,unsharp=3:3:0.6:3:3:0.0[enhanced];
-                 [1:v][enhanced]scale2ref[logo][video];
-                 [video][logo]overlay=0:0:format=auto,format=yuv420p,setsar=1" \
-              -af "highpass=f=200,lowpass=f=3000,volume=1.25,pan=stereo|c0=c0|c1=c0" \
-              -c:v libx264 \
-              -preset ultrafast \
-              -tune zerolatency \
-              -profile:v high \
-              -color_primaries bt709 \
-              -color_trc bt709 \
-              -colorspace bt709 \
-              -crf 22 \
-              -b:v 4500k \
-              -maxrate 5000k \
-              -bufsize 9000k \
-              -c:a aac \
-              -b:a 160k \
-              -ar 44100 \
-              -ac 2 \
-              -max_muxing_queue_size 2048 \
-              -f flv \
-              "$RTMP_URL"
+            if [[ "$SOURCE_URL" == *".ts"* ]]; then
+              echo "💡 Stream Type Detected: Direct TS Stream"
+              ffmpeg \
+                -hide_banner \
+                -loglevel warning \
+                -stats \
+                -user_agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36" \
+                -headers "Referer: http://g.avivorix.cc/" \
+                -reconnect 1 \
+                -reconnect_at_eof 1 \
+                -reconnect_streamed 1 \
+                -reconnect_delay_max 5 \
+                -fflags +genpts+discardcorrupt \
+                -f mpegts -i "$SOURCE_URL" \
+                -loop 1 -i "logocopyayhamA.png" \
+                -filter_complex \
+                  "[0:v]scale=in_range=limited:out_range=full,eq=saturation=1.18:contrast=1.09:brightness=0.01:gamma=1.04,hqdn3d=1.5:1.5:3:3,unsharp=3:3:0.6:3:3:0.0[enhanced];
+                   [1:v][enhanced]scale2ref[logo][video];
+                   [video][logo]overlay=0:0:format=auto,format=yuv420p,setsar=1" \
+                -af "highpass=f=200,lowpass=f=3000,volume=1.25,pan=stereo|c0=c0|c1=c0" \
+                -c:v libx264 \
+                -preset ultrafast \
+                -tune zerolatency \
+                -profile:v high \
+                -color_primaries bt709 \
+                -color_trc bt709 \
+                -colorspace bt709 \
+                -crf 22 \
+                -b:v 4500k \
+                -maxrate 5000k \
+                -bufsize 9000k \
+                -c:a aac \
+                -b:a 160k \
+                -ar 44100 \
+                -ac 2 \
+                -max_muxing_queue_size 2048 \
+                -f flv \
+                "$RTMP_URL"
+            else
+              echo "💡 Stream Type Detected: HLS M3U8 Stream"
+              streamlink \
+                --loglevel warning \
+                --retry-streams 5 \
+                --retry-open 5 \
+                --stream-segment-attempts 5 \
+                --stream-segment-timeout 10 \
+                --http-header "User-Agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36" \
+                --http-header "Referer=http://www.manar2.shop/" \
+                "hlsvariant://$SOURCE_URL" best \
+                -O | ffmpeg \
+                -hide_banner \
+                -loglevel warning \
+                -stats \
+                -fflags +genpts+discardcorrupt \
+                -f mpegts -i pipe:0 \
+                -loop 1 -i "logocopyayhamA.png" \
+                -filter_complex \
+                  "[0:v]scale=in_range=limited:out_range=full,eq=saturation=1.18:contrast=1.09:brightness=0.01:gamma=1.04,hqdn3d=1.5:1.5:3:3,unsharp=3:3:0.6:3:3:0.0[enhanced];
+                   [1:v][enhanced]scale2ref[logo][video];
+                   [video][logo]overlay=0:0:format=auto,format=yuv420p,setsar=1" \
+                -af "highpass=f=200,lowpass=f=3000,volume=1.25,pan=stereo|c0=c0|c1=c0" \
+                -c:v libx264 \
+                -preset ultrafast \
+                -tune zerolatency \
+                -profile:v high \
+                -color_primaries bt709 \
+                -color_trc bt709 \
+                -colorspace bt709 \
+                -crf 22 \
+                -b:v 4500k \
+                -maxrate 5000k \
+                -bufsize 9000k \
+                -c:a aac \
+                -b:a 160k \
+                -ar 44100 \
+                -ac 2 \
+                -max_muxing_queue_size 2048 \
+                -f flv \
+                "$RTMP_URL"
+            fi
 
             EXIT_CODE=$?
             echo "⚠ Pipeline exited with code: $EXIT_CODE"
