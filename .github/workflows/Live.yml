@@ -1,4 +1,4 @@
-name: mystream-ayham
+name: 1080p@AutoFPS-ProFidelity
 
 on:
   workflow_dispatch:
@@ -23,7 +23,7 @@ jobs:
       - name: Start Stream
         run: |
           RTMP_URL="rtmp://vsu.okcdn.ru/input/15980421979756_17750707931756_3zvyihuvcy"
-          SOURCE_URL="http://www.manar2.shop/x1/59_0.m3u8"
+          SOURCE_URL="http://g.avivorix.cc/live/atshad/shgowhbs/1339214.ts?token=ShN0YQ0JGlhBVEk9ShAWG04kBi5fWQJEC0E8WgsHJDJHQQQJQQQQQ1JHG0EQQQQQQQ0QQQ0UWwVQAVVQUwxNQ0QQQQQQQQxAWUcQAQQQQQQQRhVGQQQQQUcNUFJQDFFQBQQACEgSQQQQRw1BQQQHQQQQQEYcFAQQQQQQQQQQQQQQQQQQQRICDBYJW09EV1xnBQFUBV5SQw5HBkNJRAQQQRMLXEQIXBRAAQxDEQdMVxpbRghcBwBDGEdUDhAITRMYEwsQdSESFEAGHUMGCEtbVw9GA0ZERUMYR14SOhRcEhVDVFNcAUIaWEFVFU9EVVNAPgdWCl5TAkAMQQQQRANDQBMdEFQQQQQQAQQQEQQQEAJDQQQQQQQQQ0dK"
 
           if [ ! -f "logocopyayhamA.png" ]; then
             echo "❌ Logo file not found!"
@@ -35,7 +35,7 @@ jobs:
 
           while [ $FAIL_COUNT -lt $MAX_FAILS ]; do
             echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-            echo "▶ Starting Enhanced 50FPS Engine | Attempt: $((FAIL_COUNT + 1))"
+            echo "▶ Starting Stream (Pro Fidelity & Speed 1.0x) | Attempt: $((FAIL_COUNT + 1))"
             echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
             streamlink \
@@ -45,7 +45,7 @@ jobs:
               --stream-segment-attempts 5 \
               --stream-segment-timeout 10 \
               --http-header "User-Agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36" \
-              --http-header "Referer=http://www.manar2.shop/" \
+              --http-header "Referer=http://g.avivorix.cc/" \
               "hlsvariant://$SOURCE_URL" best \
               -O | ffmpeg \
               -hide_banner \
@@ -55,28 +55,26 @@ jobs:
               -f mpegts -i pipe:0 \
               -loop 1 -i "logocopyayhamA.png" \
               -filter_complex \
-                "[0:v]fps=50,eq=saturation=1.15:contrast=1.08:brightness=0.02:gamma=1.05,unsharp=3:3:0.5:3:3:0.0[enhanced];
+                "[0:v]scale=in_range=limited:out_range=full,eq=saturation=1.18:contrast=1.09:brightness=0.01:gamma=1.04,hqdn3d=1.5:1.5:3:3,unsharp=3:3:0.6:3:3:0.0[enhanced];
                  [1:v][enhanced]scale2ref[logo][video];
                  [video][logo]overlay=0:0:format=auto,format=yuv420p,setsar=1" \
-              -af "volume=1.2,loudnorm=I=-16:TP=-1.5:LRA=11" \
+              -af "highpass=f=200,lowpass=f=3000,volume=1.25,pan=stereo|c0=c0|c1=c0" \
               -c:v libx264 \
-              -preset veryfast \
+              -preset ultrafast \
               -tune zerolatency \
               -profile:v high \
               -color_primaries bt709 \
               -color_trc bt709 \
               -colorspace bt709 \
-              -crf 20 \
-              -b:v 5500k \
-              -maxrate 6500k \
-              -bufsize 12000k \
-              -g 100 \
-              -keyint_min 50 \
+              -crf 22 \
+              -b:v 4500k \
+              -maxrate 5000k \
+              -bufsize 9000k \
               -c:a aac \
-              -b:a 192k \
+              -b:a 160k \
               -ar 44100 \
               -ac 2 \
-              -max_muxing_queue_size 4096 \
+              -max_muxing_queue_size 2048 \
               -f flv \
               "$RTMP_URL"
 
@@ -92,4 +90,3 @@ jobs:
 
           echo "❌ Max reconnect attempts reached. Exiting."
           exit 1
-
