@@ -22,7 +22,7 @@ jobs:
 
       - name: Start Stream
         run: |
-          RTMP_URL="rtmp://vsu.okcdn.ru/input/15980421979756_17750707931756_3zvyihuvcy"
+          RTMP_URL="rtmp://stream.soop.live/app/iaj28euhs-813204288-VR"
           SOURCE_URL="http://g.avivorix.cc/live/atshad/shgowhbs/1339214.ts?token=ShN0YQ0JGlhBVEk9ShAWG04kBi5fWQJEC0E8WgsHJDJHQQQJQQQQQ1JHG0EQQQQQQQ0QQQ0UWwVQAVVQUwxNQ0QQQQQQQQxAWUcQAQQQQQQQRhVGQQQQQUcNUFJQDFFQBQQACEgSQQQQRw1BQQQHQQQQQEYcFAQQQQQQQQQQQQQQQQQQQRICDBYJW09EV1xnBQFUBV5SQw5HBkNJRAQQQRMLXEQIXBRAAQxDEQdMVxpbRghcBwBDGEdUDhAITRMYEwsQdSESFEAGHUMGCEtbVw9GA0ZERUMYR14SOhRcEhVDVFNcAUIaWEFVFU9EVVNAPgdWCl5TAkAMQQQQRANDQBMdEFQQQQQQAQQQEQQQEAJDQQQQQQQQQ0dK"
 
           if [ ! -f "logocopyayhamA.png" ]; then
@@ -35,7 +35,7 @@ jobs:
 
           while [ $FAIL_COUNT -lt $MAX_FAILS ]; do
             echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-            echo "▶ Starting Hybrid Engine | Attempt: $((FAIL_COUNT + 1))"
+            echo "▶ Starting Balanced Engine | Attempt: $((FAIL_COUNT + 1))"
             echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
             if [[ "$SOURCE_URL" == *".ts"* ]]; then
@@ -54,10 +54,9 @@ jobs:
                 -f mpegts -i "$SOURCE_URL" \
                 -loop 1 -i "logocopyayhamA.png" \
                 -filter_complex \
-                  "[0:v]scale=in_range=limited:out_range=full,eq=saturation=1.18:contrast=1.09:brightness=0.01:gamma=1.04,hqdn3d=1.5:1.5:3:3,unsharp=3:3:0.6:3:3:0.0[enhanced];
+                  "[0:v]eq=saturation=1.12:contrast=1.05:brightness=0.01,unsharp=3:3:0.4:3:3:0.0[enhanced];
                    [1:v][enhanced]scale2ref[logo][video];
                    [video][logo]overlay=0:0:format=auto,format=yuv420p,setsar=1" \
-                -af "highpass=f=200,lowpass=f=3000,volume=1.25,pan=stereo|c0=c0|c1=c0" \
                 -c:v libx264 \
                 -preset ultrafast \
                 -tune zerolatency \
@@ -65,7 +64,7 @@ jobs:
                 -color_primaries bt709 \
                 -color_trc bt709 \
                 -colorspace bt709 \
-                -crf 22 \
+                -crf 21 \
                 -b:v 4500k \
                 -maxrate 5000k \
                 -bufsize 9000k \
@@ -95,10 +94,9 @@ jobs:
                 -f mpegts -i pipe:0 \
                 -loop 1 -i "logocopyayhamA.png" \
                 -filter_complex \
-                  "[0:v]scale=in_range=limited:out_range=full,eq=saturation=1.18:contrast=1.09:brightness=0.01:gamma=1.04,hqdn3d=1.5:1.5:3:3,unsharp=3:3:0.6:3:3:0.0[enhanced];
+                  "[0:v]eq=saturation=1.12:contrast=1.05:brightness=0.01,unsharp=3:3:0.4:3:3:0.0[enhanced];
                    [1:v][enhanced]scale2ref[logo][video];
                    [video][logo]overlay=0:0:format=auto,format=yuv420p,setsar=1" \
-                -af "highpass=f=200,lowpass=f=3000,volume=1.25,pan=stereo|c0=c0|c1=c0" \
                 -c:v libx264 \
                 -preset ultrafast \
                 -tune zerolatency \
@@ -106,7 +104,7 @@ jobs:
                 -color_primaries bt709 \
                 -color_trc bt709 \
                 -colorspace bt709 \
-                -crf 22 \
+                -crf 21 \
                 -b:v 4500k \
                 -maxrate 5000k \
                 -bufsize 9000k \
