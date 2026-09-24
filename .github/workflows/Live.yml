@@ -1,7 +1,11 @@
-name: 1080p@Auto-Engine
+name: 720p Live Stream
 
 on:
   workflow_dispatch:
+
+concurrency:
+  group: live-stream
+  cancel-in-progress: false
 
 jobs:
   stream:
@@ -12,7 +16,7 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Setup Tools (Fast)
+      - name: Setup Tools
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y ffmpeg python3-pip
@@ -20,100 +24,92 @@ jobs:
           ffmpeg -version | head -1
           streamlink --version
 
-      - name: Start Stream
+      - name: Verify Logo
         run: |
-          RTMP_URL="rtmp://vsu.okcdn.ru/input/15980421979756_17750707931756_3zvyihuvcy"
-          SOURCE_URL="http://g.avivorix.cc/live/atshad/shgowhbs/1339214.ts?token=ShN0YQ0JGlhBVEk9ShAWG04kBi5fWQJEC0E8WgsHJDJHQQQJQQQQQ1JHG0EQQQQQQQ0QQQ0UWwVQAVVQUwxNQ0QQQQQQQQxAWUcQAQQQQQQQRhVGQQQQQUcNUFJQDFFQBQQACEgSQQQQRw1BQQQHQQQQQEYcFAQQQQQQQQQQQQQQQQQQQRICDBYJW09EV1xnBQFUBV5SQw5HBkNJRAQQQRMLXEQIXBRAAQxDEQdMVxpbRghcBwBDGEdUDhAITRMYEwsQdSESFEAGHUMGCEtbVw9GA0ZERUMYR14SOhRcEhVDVFNcAUIaWEFVFU9EVVNAPgdWCl5TAkAMQQQQRANDQBMdEFQQQQQQAQQQEQQQEAJDQQQQQQQQQ0dK"
-
           if [ ! -f "logocopyayhamA.png" ]; then
-            echo "❌ Logo file not found!"
+            echo "❌ Logo not found: logocopyayhamA.png"
+            echo "📁 Files in repo:"
+            ls -la
             exit 1
           fi
+          echo "✅ Logo found: $(ls -lh logocopyayhamA.png)"
+
+      - name: Start Stream
+        env:
+          SOURCE_URL: "https://blanchedalmond-dugong-106131.hostingersite.com/live.php/play.ts?file=https://ss1170.novaegypt.com/live/35767_.m3u8?session=Geb4mk-_cuDWBrvAznewO_ZwPBhZ2ZIcnoLIp5aF_pqmD2LxUJ8YXW6SaMlrvcuXBXaDClRuwHfxPCe7SSCaY5o_v4m9Y1es&location=local"
+          RTMP_URL: "rtmp://vsu.okcdn.ru/input/15980421979756_17750707931756_3zvyihuvcy"
+        run: |
+          set -uo pipefail
 
           FAIL_COUNT=0
-          MAX_FAILS=10
+          MAX_FAILS=9999
 
           while [ $FAIL_COUNT -lt $MAX_FAILS ]; do
             echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-            echo "▶ Starting Pure Quality Stream | Attempt: $((FAIL_COUNT + 1))"
+            echo "▶ Attempt: $((FAIL_COUNT + 1)) | $(date)"
             echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-            if [[ "$SOURCE_URL" == *".ts"* ]]; then
-              echo "💡 Stream Type Detected: Direct TS Stream"
-              ffmpeg \
-                -hide_banner \
-                -loglevel warning \
-                -stats \
-                -user_agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36" \
-                -headers "Referer: http://g.avivorix.cc/" \
-                -reconnect 1 \
-                -reconnect_at_eof 1 \
-                -reconnect_streamed 1 \
-                -reconnect_delay_max 5 \
-                -fflags +genpts+discardcorrupt \
-                -f mpegts -i "$SOURCE_URL" \
-                -i "logocopyayhamA.png" \
-                -filter_complex "[0:v][1:v]overlay=0:0" \
-                -c:v libx264 \
-                -preset ultrafast \
-                -tune zerolatency \
-                -crf 18 \
-                -b:v 5500k \
-                -maxrate 6000k \
-                -bufsize 12000k \
-                -pix_fmt yuv420p \
-                -c:a aac \
-                -b:a 128k \
-                -ar 44100 \
-                -ac 2 \
-                -max_muxing_queue_size 1024 \
-                -f flv \
-                "$RTMP_URL"
-            else
-              echo "💡 Stream Type Detected: HLS M3U8 Stream"
-              streamlink \
-                --loglevel warning \
-                --retry-streams 5 \
-                --retry-open 5 \
-                --stream-segment-attempts 5 \
-                --stream-segment-timeout 10 \
-                --http-header "User-Agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36" \
-                --http-header "Referer=http://www.manar2.shop/" \
-                "hlsvariant://$SOURCE_URL" best \
-                -O | ffmpeg \
-                -hide_banner \
-                -loglevel warning \
-                -stats \
-                -fflags +genpts+discardcorrupt \
-                -f mpegts -i pipe:0 \
-                -i "logocopyayhamA.png" \
-                -filter_complex "[0:v][1:v]overlay=0:0" \
-                -c:v libx264 \
-                -preset ultrafast \
-                -tune zerolatency \
-                -crf 18 \
-                -b:v 5500k \
-                -maxrate 6000k \
-                -bufsize 12000k \
-                -pix_fmt yuv420p \
-                -c:a aac \
-                -b:a 128k \
-                -ar 44100 \
-                -ac 2 \
-                -max_muxing_queue_size 1024 \
-                -f flv \
-                "$RTMP_URL"
-            fi
+            streamlink \
+              --loglevel warning \
+              --retry-streams 5 \
+              --retry-open 5 \
+              --stream-segment-attempts 5 \
+              --stream-segment-timeout 10 \
+              --http-header "User-Agent=Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36" \
+              --http-header "Referer=https://blanchedalmond-dugong-106131.hostingersite.com/" \
+              "hlsvariant://$SOURCE_URL" best \
+              -O 2>>streamlink.log | ffmpeg \
+              -hide_banner \
+              -loglevel warning \
+              -stats \
+              -f mpegts -i pipe:0 \
+              -loop 1 -i "logocopyayhamA.png" \
+              -filter_complex \
+                "[1:v]scale=1280:720[logo];[0:v]scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2,setsar=1[base];[base][logo]overlay=0:0:format=auto,format=yuv420p[v]" \
+              -map "[v]" \
+              -map 0:a? \
+              -c:v libx264 \
+              -preset veryfast \
+              -tune zerolatency \
+              -profile:v high \
+              -crf 20 \
+              -maxrate 5000k \
+              -bufsize 9000k \
+              -g 50 \
+              -keyint_min 25 \
+              -c:a aac \
+              -b:a 160k \
+              -ar 44100 \
+              -ac 2 \
+              -max_muxing_queue_size 4096 \
+              -flvflags no_duration_filesize \
+              -f flv \
+              "$RTMP_URL" 2>>ffmpeg.log
 
             EXIT_CODE=$?
             echo "⚠ Pipeline exited with code: $EXIT_CODE"
+            echo "--- Last 10 lines of FFmpeg ---"
+            tail -10 ffmpeg.log 2>/dev/null || true
+            echo "--- Last 10 lines of Streamlink ---"
+            tail -10 streamlink.log 2>/dev/null || true
 
             FAIL_COUNT=$((FAIL_COUNT + 1))
             WAIT=$((FAIL_COUNT * 3))
             [ $WAIT -gt 30 ] && WAIT=30
-            echo "🔄 Reconnecting in ${WAIT}s... (Fail $FAIL_COUNT/$MAX_FAILS)"
+            echo "🔄 Reconnect in ${WAIT}s... (Fail $FAIL_COUNT/$MAX_FAILS)"
             sleep $WAIT
           done
 
-          echo "❌ Max reconnect attempts reached. Exiting."
+          echo "❌ Max fails reached"
           exit 1
+
+      - name: Upload Logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stream-logs
+          path: |
+            streamlink.log
+            ffmpeg.log
+          retention-days: 3
+          if-no-files-found: ignore
