@@ -23,7 +23,7 @@ jobs:
       - name: Start Stream
         run: |
           RTMP_URL="rtmp://stream.soop.live/app/iaj28euhs-813204288"
-          SOURCE_URL="http://str2.v3v3v.xyz/live/Nabil_384986/MATxRQG3/1356802.m3u8"
+          SOURCE_URL="https://blanchedalmond-dugong-106131.hostingersite.com/live.php/play.ts?file=https://ss1117.novaegypt.com/live/527418_.m3u8?session=gLqpyDoWEhgr3H8MJ8v3RO2Xpr6VRYErxunmZLxADzy2VYVFen5fsMLp1mMtUv-mmiZDcqPFsFz5Q2fZ8Sk2ly55Xk6nwlqZ&location=local"
 
           if [ ! -f "logocopyayhamA.png" ]; then
             echo "❌ Logo file not found!"
