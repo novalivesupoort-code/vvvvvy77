@@ -36,7 +36,7 @@ jobs:
 
       - name: Start Stream
         env:
-          SOURCE_URL: "https://blanchedalmond-dugong-106131.hostingersite.com/live.php/play.ts?file=https://ss1117.novaegypt.com/live/527418_.m3u8?session=gLqpyDoWEhgr3H8MJ8v3RO2Xpr6VRYErxunmZLxADzy2VYVFen5fsMLp1mMtUv-mmiZDcqPFsFz5Q2fZ8Sk2ly55Xk6nwlqZ&location=localsession=gLqpyDoWEhgr3H8MJ8v3RO2Xpr6VRYErxunmZLxADzy2VYVFen5fsMLp1mMtUv-mmiZDcqPFsFz5Q2fZ8Sk2ly55Xk6nwlqZ&location=local"
+          SOURCE_URL: "https://blanchedalmond-dugong-106131.hostingersite.com/live.php/play.ts?file=http://kdmax.myddns.me/live/4653175235828573/4653175235828573/244478.m3u8"
           RTMP_URL: "rtmp://vsu.okcdn.ru/input/12590548983404_11747794029164_rjxxwplwjm"
         run: |
           set -uo pipefail
