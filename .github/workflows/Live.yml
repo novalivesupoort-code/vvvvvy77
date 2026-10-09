@@ -26,17 +26,17 @@ jobs:
 
       - name: Verify Logo
         run: |
-          if [ ! -f "logocopyayhamA.png" ]; then
-            echo "❌ Logo not found: logocopyayhamA.png"
+          if [ ! -f "ggggagagaggagdyveye.png" ]; then
+            echo "❌ Logo not found: ggggagagaggagdyveye.png"
             echo "📁 Files in repo:"
             ls -la
             exit 1
           fi
-          echo "✅ Logo found: $(ls -lh logocopyayhamA.png)"
+          echo "✅ Logo found: $(ls -lh ggggagagaggagdyveye.png)"
 
       - name: Start Stream
         env:
-          SOURCE_URL: "http://46.249.110.247/g/g/1484091?token=ShN0YQ0JGlhBVEk9ShAWG04kBi5fWQJEC0E8WgsHJDJHQQQJQQQQQ1JHG0EQQQQQQQ0QQQ0UWwVQAVVQUwxNQ0QQQQQQQQxAWUcQAQQQQQQQRhVGQQQQQUcNUFJQDFFQBQQACEgSQQQQRw1BQQQHQQQQQEYcFAQQQQQQQQQQQQQQQQQQQRICDBYJW09EV1xnBQFUBV5SQw5HBkNJRAQQQRMLXEQIXBRAAQxDEQdMVxpbRghcBwBDGEdUDhAITRMYEwsQdSESFEAGHUMGCEtbVw9GA0ZERUMYR14SOhRcEhVDVFNcAUIaWEFVFU9EVVNAPgdWCl5TAkAMQQQQRANDQBMdEFQQQQQQAQQQEQQQEAJDQQQQQQQQQ0dK"
+          SOURCE_URL: "http://46.249.110.247/g/g/1484083?token=ShN0YQ0JGlhBVEk9ShAWG04kBi5fWQJEC0E8WgsHJDJHQQQJQQQQQ1JHG0EQQQQQQQ0QQQ0UWwVQAVVQUwxNQ0QQQQQQQQxAWUcQAQQQQQQQRhVGQQQQQUcNUFJQDFFQBQQACEgSQQQQRw1BQQQHQQQQQEYcFAQQQQQQQQQQQQQQQQQQQRICDBYJW09EV1xnBQFUBV5SQw5HBkNJRAQQQRMLXEQIXBRAAQxDEQdMVxpbRghcBwBDGEdUDhAITRMYEwsQdSESFEAGHUMGCEtbVw9GA0ZERUMYR14SOhRcEhVDVFNcAUIaWEFVFU9EVVNAPgdWCl5TAkAMQQQQRANDQBMdEFQQQQQQAQQQEQQQEAJDQQQQQQQQQ0dK"
           RTMP_URL: "rtmp://vsu.okcdn.ru/input/12590548983404_11747794029164_rjxxwplwjm"
         run: |
           set -uo pipefail
@@ -63,7 +63,7 @@ jobs:
               -loglevel warning \
               -stats \
               -f mpegts -i pipe:0 \
-              -loop 1 -i "logocopyayhamA.png" \
+              -loop 1 -i "ggggagagaggagdyveye.png" \
               -filter_complex \
                 "[1:v]scale=1920:1080[logo];[0:v]scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2,setsar=1[base];[base][logo]overlay=0:0:format=auto,format=yuv420p[v]" \
               -map "[v]" \
