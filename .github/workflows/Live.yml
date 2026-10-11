@@ -36,8 +36,8 @@ jobs:
 
       - name: Start Stream
         env:
-          SOURCE_URL: "https://blanchedalmond-dugong-106131.hostingersite.com/live.php/play.ts?file=http://kdmax.myddns.me:8080/live/4653175235828573/4653175235828573/221756.m3u8"
-          RTMP_URL: "rtmp://vsu.okcdn.ru/input/12590548983404_11747794029164_rjxxwplwjm"
+          SOURCE_URL: "https://blanchedalmond-dugong-106131.hostingersite.com/live.php/play.ts?file=http://kdmax.myddns.me:8080/live/4653175235828573/4653175235828573/221289.m3u8"
+          RTMP_URL: "rtmp://a.rtmp.youtube.com/live2/frj3-u55d-d01x-8fg2-90tq"
         run: |
           set -uo pipefail
 
