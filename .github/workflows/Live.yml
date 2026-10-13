@@ -28,11 +28,20 @@ jobs:
         run: |
           if [ ! -f "ggggagagaggagdyveye.png" ]; then
             echo "❌ Logo not found: ggggagagaggagdyveye.png"
-            echo "📁 Files in repo:"
             ls -la
             exit 1
           fi
           echo "✅ Logo found: $(ls -lh ggggagagaggagdyveye.png)"
+
+      - name: Test Source URL
+        env:
+          SOURCE_URL: "https://blanchedalmond-dugong-106131.hostingersite.com/live.php/play.ts?file=http://kdmax.myddns.me:8080/live/4653175235828573/4653175235828573/221289.m3u8"
+        run: |
+          echo "🔍 اختبار المصدر..."
+          curl -s -o /dev/null -w "HTTP: %{http_code}\n" \
+            -A "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36" \
+            --max-time 15 \
+            "$SOURCE_URL"
 
       - name: Start Stream
         env:
@@ -59,6 +68,7 @@ jobs:
               --http-header "Referer=https://blanchedalmond-dugong-106131.hostingersite.com/" \
               "hlsvariant://$SOURCE_URL" best \
               -O 2>>streamlink.log | ffmpeg \
+              -nostdin \
               -hide_banner \
               -loglevel warning \
               -stats \
@@ -69,16 +79,15 @@ jobs:
                 "[1:v]scale=1920:1080:flags=lanczos[logo]; \
                  [0:v]scale=1920:1080:force_original_aspect_ratio=decrease:flags=lanczos, \
                      pad=1920:1080:(ow-iw)/2:(oh-ih)/2:color=black, \
-                     setsar=1, \
-                     fps=50, \
+                     setsar=1,fps=50, \
                      unsharp=5:5:0.8:3:3:0.4, \
-                     eq=contrast=1.05:saturation=1.1:brightness=0.02, \
+                     eq=contrast=1.05:saturation=1.1, \
                      format=yuv420p[base]; \
                  [base][logo]overlay=0:0:format=auto[v]" \
               -map "[v]" \
               -map 0:a? \
               -c:v libx264 \
-              -preset veryfast \
+              -preset superfast \
               -tune film \
               -profile:v high \
               -level 4.2 \
@@ -86,10 +95,9 @@ jobs:
               -maxrate 8000k \
               -bufsize 16000k \
               -g 100 \
-              -keyint_min 100 \
+              -keyint_min 50 \
               -sc_threshold 0 \
               -r 50 \
-              -x264-params "ref=4:bframes=3:b-adapt=2:me=umh:subme=8:trellis=2:deblock=-1,-1:psy-rd=1.0,0.15:aq-mode=3:aq-strength=1.2" \
               -c:a aac \
               -b:a 160k \
               -ar 48000 \
@@ -101,10 +109,10 @@ jobs:
 
             EXIT_CODE=$?
             echo "⚠ Pipeline exited with code: $EXIT_CODE"
-            echo "--- Last 10 lines of FFmpeg ---"
-            tail -10 ffmpeg.log 2>/dev/null || true
-            echo "--- Last 10 lines of Streamlink ---"
-            tail -10 streamlink.log 2>/dev/null || true
+            echo "--- Last 15 lines of FFmpeg ---"
+            tail -15 ffmpeg.log 2>/dev/null || true
+            echo "--- Last 15 lines of Streamlink ---"
+            tail -15 streamlink.log 2>/dev/null || true
 
             FAIL_COUNT=$((FAIL_COUNT + 1))
             WAIT=$((FAIL_COUNT * 3))
