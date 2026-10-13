@@ -1,4 +1,4 @@
-name: 720p Live Stream
+name: 1080p@50FPS Live Stream
 
 on:
   workflow_dispatch:
@@ -37,7 +37,7 @@ jobs:
       - name: Start Stream
         env:
           SOURCE_URL: "https://blanchedalmond-dugong-106131.hostingersite.com/live.php/play.ts?file=http://kdmax.myddns.me:8080/live/4653175235828573/4653175235828573/221289.m3u8"
-          RTMP_URL: "rtmp://a.rtmp.youtube.com/live2/frj3-u55d-d01x-8fg2-90tq"
+          RTMP_URL: "rtmp://vsu.okcdn.ru/input/12590548983404_11747794029164_rjxxwplwjm"
         run: |
           set -uo pipefail
 
@@ -62,24 +62,37 @@ jobs:
               -hide_banner \
               -loglevel warning \
               -stats \
+              -thread_queue_size 2048 \
               -f mpegts -i pipe:0 \
-              -loop 1 -i "ggggagagaggagdyveye.png" \
+              -loop 1 -framerate 50 -i "ggggagagaggagdyveye.png" \
               -filter_complex \
-                "[1:v]scale=1920:1080[logo];[0:v]scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2,setsar=1[base];[base][logo]overlay=0:0:format=auto,format=yuv420p[v]" \
+                "[1:v]scale=1920:1080:flags=lanczos[logo]; \
+                 [0:v]scale=1920:1080:force_original_aspect_ratio=decrease:flags=lanczos, \
+                     pad=1920:1080:(ow-iw)/2:(oh-ih)/2:color=black, \
+                     setsar=1, \
+                     fps=50, \
+                     unsharp=5:5:0.8:3:3:0.4, \
+                     eq=contrast=1.05:saturation=1.1:brightness=0.02, \
+                     format=yuv420p[base]; \
+                 [base][logo]overlay=0:0:format=auto[v]" \
               -map "[v]" \
               -map 0:a? \
               -c:v libx264 \
               -preset veryfast \
-              -tune zerolatency \
+              -tune film \
               -profile:v high \
-              -crf 19 \
-              -maxrate 5000k \
-              -bufsize 10000k \
-              -g 50 \
-              -keyint_min 50 \
+              -level 4.2 \
+              -b:v 8000k \
+              -maxrate 8000k \
+              -bufsize 16000k \
+              -g 100 \
+              -keyint_min 100 \
+              -sc_threshold 0 \
+              -r 50 \
+              -x264-params "ref=4:bframes=3:b-adapt=2:me=umh:subme=8:trellis=2:deblock=-1,-1:psy-rd=1.0,0.15:aq-mode=3:aq-strength=1.2" \
               -c:a aac \
-              -b:a 140k \
-              -ar 44100 \
+              -b:a 160k \
+              -ar 48000 \
               -ac 2 \
               -max_muxing_queue_size 4096 \
               -flvflags no_duration_filesize \
